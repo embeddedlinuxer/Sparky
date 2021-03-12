@@ -276,6 +276,7 @@ Makefile: ../Sparky/sparky.pro ../../../Qt/5.15.2/mingw81_32/mkspecs/win32-g++/q
 		../../../Qt/5.15.2/mingw81_32/lib/Qt5Charts.prl \
 		../../../Qt/5.15.2/mingw81_32/lib/Qt5Widgets.prl \
 		../../../Qt/5.15.2/mingw81_32/lib/Qt5Gui.prl \
+		../../../Qt/5.15.2/mingw81_32/lib/Qt5Concurrent.prl \
 		../../../Qt/5.15.2/mingw81_32/lib/Qt5Core.prl \
 		../../../Qt/5.15.2/mingw81_32/lib/qtmain.prl \
 		../../../Qt/5.15.2/mingw81_32/mkspecs/features/build_pass.prf \
@@ -487,6 +488,7 @@ Makefile: ../Sparky/sparky.pro ../../../Qt/5.15.2/mingw81_32/mkspecs/win32-g++/q
 ../../../Qt/5.15.2/mingw81_32/lib/Qt5Charts.prl:
 ../../../Qt/5.15.2/mingw81_32/lib/Qt5Widgets.prl:
 ../../../Qt/5.15.2/mingw81_32/lib/Qt5Gui.prl:
+../../../Qt/5.15.2/mingw81_32/lib/Qt5Concurrent.prl:
 ../../../Qt/5.15.2/mingw81_32/lib/Qt5Core.prl:
 ../../../Qt/5.15.2/mingw81_32/lib/qtmain.prl:
 ../../../Qt/5.15.2/mingw81_32/mkspecs/features/build_pass.prf:

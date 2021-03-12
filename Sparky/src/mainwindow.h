@@ -242,7 +242,16 @@ typedef struct PIPE_OBJECT
     QLCDNumber * lcdTemp;
     QLCDNumber * lcdReflectedPower;
 
-	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), calFile(0), isCal(false), mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber) {}
+	double temperature;
+    double temperature_prev;
+    double frequency;
+    double frequency_prev;
+    double watercut;
+    double oilrp;
+    double measai;
+    double trimai;
+
+	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), calFile(0), isCal(false), mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber), temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), watercut(0), oilrp(0), measai(0), trimai(0) {}
 
     //This is the destructor.  Will delete the array of vertices, if present.
     ~PIPE_OBJECT()
@@ -275,15 +284,7 @@ typedef struct LOOP_OBJECT
     double injectionMark;
     double injectionMethod;
     double pressureSensorSlope;
-    double temperature;
-    double temperature_prev;
-    double frequency;
-    double frequency_prev;
-    double watercut;
-    double oilrp;
-    double measai;
-    double trimai;
-
+    
 	/// register address for calibration
     int ID_SN_PIPE;
     int ID_WATERCUT;
@@ -314,7 +315,7 @@ typedef struct LOOP_OBJECT
     QValueAxis * axisY;
     QValueAxis * axisY3;
 
-	LOOP_OBJECT() : isCal(false), isEEA(0), mode(""), calibrationLimit(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), watercut(0), oilrp(0), measai(0), trimai(0), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
+	LOOP_OBJECT() : isCal(false), isEEA(0), mode(""), calibrationLimit(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
 
 	~LOOP_OBJECT()
 	{
@@ -366,7 +367,7 @@ public:
     int setupModbusPort_5();
     int setupModbusPort_6();
 
-	void setCutMode(const int);
+	void setProductAndCalibrationMode(const int);
     void masterPipe(int, QString, bool);
     void prepareForNextFile(int, int);
     void writeToCalFile(int, QString);
@@ -413,7 +414,7 @@ public:
 
 private slots:
 
-    void calibrate(int);
+    void calibrate(const int);
     void stopCalibration(int);
     void onCalibrationButtonPressed(int);
     void onRtuPortActive(bool,int);

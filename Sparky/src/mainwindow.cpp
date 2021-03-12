@@ -3356,7 +3356,7 @@ createLoopFile(const int sn, const QString mode, const QString startValue, const
         QString header22;
 
         /// create headers
-        header2 = "TEMPERATURE:  "+startValue+" C "+"to "+stopValue+" C\n";
+        header2 = "TEMPERATURE:  "+startValue+" °C "+"to "+stopValue+" °C\n";
         header21 = "INJECTION:  "+LOOP[loop].waterRunStop->text()+" % "+"to "+LOOP[loop].waterRunStart->text()+" % Watercut\n";
         header22 = "ROLLOVER:  "+rolloverValue+" % "+"to "+"rollover\n";
 
@@ -3452,7 +3452,7 @@ getUserInputMessage(const QString msg_0, const QString msg_1, const QString msg_
 
 void
 MainWindow::
-setCutMode(const int loop)
+setProductAndCalibrationMode(const int loop)
 {
 	if (loop == L1)
 	{
@@ -3579,13 +3579,24 @@ bool
 MainWindow::
 prepareCalibration(const int loop)
 {
+	/// pipe sn exists?
+	if (PIPE[loop*3].slave->text().isEmpty() && PIPE[loop*3+1].slave->text().isEmpty() && PIPE[loop*3+2].slave->text().isEmpty()) 
+	{
+       	displayMessage(QString("LOOP ")+QString::number(loop + 1),QString("LOOP ")+QString::number(loop + 1),"No valid serial number found");
+		return false;
+	}
+
 	/// toggle start button
     LOOP[loop].isCal = !LOOP[loop].isCal;
 
+	/// calibration on
 	if (LOOP[loop].isCal)
 	{
-		/// set cutmode
-		setCutMode(loop);
+		/// set product & calibration mode
+		setProductAndCalibrationMode(loop);
+
+    	/// update product specific register IDs
+    	updateRegisters(LOOP[loop].isEEA,loop);
 
 		/// pipe specific vars
 		for (int pipe = loop*3; pipe < loop*3 + 3; pipe++)
@@ -3593,8 +3604,8 @@ prepareCalibration(const int loop)
 			PIPE[pipe].tempStability = 0;
    			PIPE[pipe].freqStability = 0;
    			PIPE[pipe].etimer->restart();
-   			PIPE[pipe].calFile = S_AMB_20;
    			PIPE[pipe].mainDirPath = m_mainServer+LOOP[loop].mode+PIPE[pipe].slave->text(); 
+   			(LOOP[loop].mode == LOW) ? PIPE[pipe].calFile = S_AMB_20 : PIPE[pipe].calFile = S_AMB_20;
 
 			/// osc
 			if (ui->radioButton_7->isChecked()) PIPE[pipe].osc = 1;
@@ -3603,19 +3614,16 @@ prepareCalibration(const int loop)
    			else PIPE[pipe].osc = 4;
 		}
 
-    	/// update register address
-    	updateRegisters(LOOP[loop].isEEA,loop);
-
     	/// validate loop connect
     	if (LOOP[loop].modbus == NULL)
     	{
-        	/// display error message
-        	displayMessage(QString("LOOP ")+QString::number(loop + 1),QString("LOOP ")+QString::number(loop + 1),"Bad Serial Connection");
         	/// calibration fails
         	LOOP[loop].isCal = false;
 
         	/// update tab icon
         	updateStartButtonLabel(loop);
+
+        	displayMessage(QString("LOOP ")+QString::number(loop + 1),QString("LOOP ")+QString::number(loop + 1),"Bad Serial Connection");
 
         	/// exit
         	return LOOP[loop].isCal;
@@ -3774,6 +3782,7 @@ onCalibrationButtonPressed(int loop)
 	}
 	else
     {
+		/// LOOP[loop].isCal == FALSE
 		stopCalibration(loop*3);
 		stopCalibration(loop*3+1);
 		stopCalibration(loop*3+2);
@@ -3865,7 +3874,7 @@ stopCalibration(int pipe)
 
 void
 MainWindow::
-calibrate(int pipe)
+calibrate(const int pipe)
 {
 	int loop = pipe/3;
     uint8_t dest[1024];
@@ -3889,52 +3898,44 @@ calibrate(int pipe)
     if (LOOP[loop].isCal)
     {
         /// get watercut 
-        LOOP[loop].watercut = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_WATERCUT, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+        PIPE[pipe].watercut = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_WATERCUT, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
         QThread::msleep(SLEEP_TIME);
 
-        /// get temperature
-        LOOP[loop].temperature = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-
-        /// verify delta temperature
-        ((LOOP[loop].temperature - LOOP[loop].temperature_prev) <= abs(DELTA_TEMPERATURE)) ? PIPE[pipe].tempStability++ : PIPE[pipe].tempStability = 0;
-        LOOP[loop].temperature_prev = LOOP[loop].temperature;
+        /// get temperature, verify delta temperature and update stability
+        PIPE[pipe].temperature = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+        ((PIPE[pipe].temperature - PIPE[pipe].temperature_prev) <= abs(DELTA_TEMPERATURE)) ? PIPE[pipe].tempStability++ : PIPE[pipe].tempStability = 0;
+        PIPE[pipe].temperature_prev = PIPE[pipe].temperature;
         if (PIPE[pipe].tempStability > 5) PIPE[pipe].tempStability = 5;
         if (PIPE[pipe].tempStability < 0) PIPE[pipe].tempStability = 0;
-
-        /// update stability
         updateStability(T_BAR, pipe, PIPE[pipe].tempStability*20);
         QThread::msleep(SLEEP_TIME);
 
-        /// get frequency 
-        LOOP[loop].frequency = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-
-        /// verify delta frequency 
-        ((LOOP[loop].frequency - LOOP[loop].frequency_prev) <= abs(DELTA_FREQUENCY)) ? PIPE[pipe].freqStability++ : PIPE[pipe].freqStability = 0;
-        LOOP[loop].frequency_prev = LOOP[loop].frequency;
+        /// get frequency, verify delta frequency and update stability
+        PIPE[pipe].frequency = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+        ((PIPE[pipe].frequency - PIPE[pipe].frequency_prev) <= abs(DELTA_FREQUENCY)) ? PIPE[pipe].freqStability++ : PIPE[pipe].freqStability = 0;
+        PIPE[pipe].frequency_prev = PIPE[pipe].frequency;
         if (PIPE[pipe].freqStability > 5) PIPE[pipe].freqStability = 5;
         if (PIPE[pipe].freqStability < 0) PIPE[pipe].freqStability = 0;
-
-        /// update stability
         updateStability(F_BAR, pipe, PIPE[pipe].freqStability*20);
         QThread::msleep(SLEEP_TIME);
 
         /// get oil_rp 
-        LOOP[loop].oilrp = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_OIL_RP, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+        PIPE[pipe].oilrp = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_OIL_RP, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
         QThread::msleep(SLEEP_TIME);
 
         /// get measured ai
-        LOOP[loop].measai = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, RAZ_MEAS_AI, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+        PIPE[pipe].measai = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, RAZ_MEAS_AI, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
         QThread::msleep(SLEEP_TIME);
 
         /// get trimmed ai
-        LOOP[loop].trimai = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, RAZ_TRIM_AI, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+        PIPE[pipe].trimai = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, RAZ_TRIM_AI, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
         QThread::msleep(SLEEP_TIME);
 
         /// update pipe reading
-        updatePipeReading(pipe, LOOP[loop].watercut, LOOP[loop].frequency, LOOP[loop].frequency, LOOP[loop].temperature, LOOP[loop].oilrp);
+        updatePipeReading(pipe, PIPE[pipe].watercut, PIPE[pipe].frequency, PIPE[pipe].frequency, PIPE[pipe].temperature, PIPE[pipe].oilrp);
 
         /// create message
-        QString data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14").arg(elapsedTime, 9, 'g', -1, ' ').arg(LOOP[loop].watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(LOOP[loop].frequency,9,'f',2,' ').arg(0,8,'f',2,' ').arg(LOOP[loop].oilrp,9,'f',2,' ').arg(LOOP[loop].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(LOOP[loop].measai,12,'f',2,' ').arg(LOOP[loop].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(0,12,'f',2,' ');
+        QString data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14").arg(elapsedTime, 9, 'g', -1, ' ').arg(PIPE[pipe].watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(0,12,'f',2,' ');
 
         /// write data - mode check
         if (LOOP[loop].mode == LOW)
@@ -3942,7 +3943,7 @@ calibrate(int pipe)
             if (PIPE[pipe].calFile == S_AMB_20) // AMB -> 20C
             {
                 /// validate run condition 
-                if (PIPE[pipe].checkBox->isChecked() && (LOOP[loop].temperature >= 20) && ((PIPE[pipe].freqStability != 5) || (PIPE[pipe].freqStability != 5)))
+                if (PIPE[pipe].checkBox->isChecked() && (PIPE[pipe].temperature >= 20) && ((PIPE[pipe].freqStability != 5) || (PIPE[pipe].freqStability != 5)))
                 {
                     /// create a new file if needed
                     if (!QFileInfo(PIPE[pipe].file).exists()) 
@@ -3951,8 +3952,9 @@ calibrate(int pipe)
                         bool ok;
                         QString msg = PIPE[pipe].slave->text().append(": Enter Measured Initial Watercut");
                         LOOP[loop].waterRunStop->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),tr(qPrintable(msg)), QLineEdit::Normal,"0.0", &ok));
+
                         /// indicate the operator to set temp to 20 C degrees
-                        if (getUserInputMessage(QString("LOOP ")+QString::number(loop + 1)+QString(", PIPE ")+QString::number(pipe%3+1), PIPE[pipe].slave->text().append(": Set Temperature")," 20 C")) createLoopFile(PIPE[pipe].slave->text().toInt(), LOOP[loop].mode, "AMB", "020", LOOP[loop].saltStop->currentText(), pipe);
+                        if (getUserInputMessage(QString("LOOP ")+QString::number(loop + 1)+QString(", PIPE ")+QString::number(pipe%3+1), PIPE[pipe].slave->text().append(": Set Temperature")," 20 °C")) createLoopFile(PIPE[pipe].slave->text().toInt(), LOOP[loop].mode, "AMB", "020", LOOP[loop].saltStop->currentText(), pipe);
                         else return;
                         
                     }
@@ -3976,12 +3978,12 @@ calibrate(int pipe)
             }
             else if (PIPE[pipe].calFile == S_20_55) // 20C -> 55C
             {
-                if (PIPE[pipe].checkBox->isChecked() && (LOOP[loop].temperature <= 55) && ((PIPE[pipe].freqStability != 5) || (PIPE[pipe].freqStability != 5))) // run? 
+                if (PIPE[pipe].checkBox->isChecked() && (PIPE[pipe].temperature <= 55) && ((PIPE[pipe].freqStability != 5) || (PIPE[pipe].freqStability != 5))) // run? 
                 {
                     /// create a new file if needed
                     if (!QFileInfo(PIPE[pipe].file).exists()) 
                     {
-                        if (getUserInputMessage(QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1), PIPE[pipe].slave->text().append(": Set Temperature")," 55 C")) createLoopFile(PIPE[pipe].slave->text().toInt(), LOOP[loop].mode, "020", "055", LOOP[loop].saltStop->currentText(), pipe);
+                        if (getUserInputMessage(QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1), PIPE[pipe].slave->text().append(": Set Temperature")," 55 °C")) createLoopFile(PIPE[pipe].slave->text().toInt(), LOOP[loop].mode, "020", "055", LOOP[loop].saltStop->currentText(), pipe);
                         else return;
                     }
             
@@ -4004,12 +4006,12 @@ calibrate(int pipe)
             }
             else if (PIPE[pipe].calFile == S_55_38) // 55C -> 38C
             {   
-                if (PIPE[pipe].checkBox->isChecked() && (LOOP[loop].temperature >= 38) && ((PIPE[pipe].freqStability != 5) || (PIPE[pipe].freqStability != 5))) // run?
+                if (PIPE[pipe].checkBox->isChecked() && (PIPE[pipe].temperature >= 38) && ((PIPE[pipe].freqStability != 5) || (PIPE[pipe].freqStability != 5))) // run?
                 {
                     /// create a new file if needed
                     if (!QFileInfo(PIPE[pipe].file).exists()) 
                     {
-                        if (getUserInputMessage(QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1), PIPE[pipe].slave->text().append(": Set Temperature")," 38 C")) createLoopFile(PIPE[pipe].slave->text().toInt(), LOOP[loop].mode, "055", "038",LOOP[loop].saltStop->currentText(), pipe);
+                        if (getUserInputMessage(QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1), PIPE[pipe].slave->text().append(": Set Temperature")," 38 °C")) createLoopFile(PIPE[pipe].slave->text().toInt(), LOOP[loop].mode, "055", "038",LOOP[loop].saltStop->currentText(), pipe);
                         else return;
                     }
 
