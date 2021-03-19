@@ -145,25 +145,60 @@
 #define L5_PRESSURE                 "L5.PresssureSensorSlope"
 #define L6_PRESSURE                 "L6.PresssureSensorSlope"
 
+#define L1_MIN_TEMP                 "L1.MinRefTemp"
+#define L2_MIN_TEMP                 "L2.MinRefTemp"
+#define L3_MIN_TEMP                 "L3.MinRefTemp"
+#define L4_MIN_TEMP                 "L4.MinRefTemp"
+#define L5_MIN_TEMP                 "L5.MinRefTemp"
+#define L6_MIN_TEMP                 "L6.MinRefTemp"
+
+#define L1_MAX_TEMP                 "L1.MaxRefTemp"
+#define L2_MAX_TEMP                 "L2.MaxRefTemp"
+#define L3_MAX_TEMP                 "L3.MaxRefTemp"
+#define L4_MAX_TEMP                 "L4.MaxRefTemp"
+#define L5_MAX_TEMP                 "L5.MaxRefTemp"
+#define L6_MAX_TEMP                 "L6.MaxRefTemp"
+
+#define L1_INJECTION_TEMP           "L1.InjectionTemp"
+#define L2_INJECTION_TEMP           "L2.InjectionTemp"
+#define L3_INJECTION_TEMP           "L3.InjectionTemp"
+#define L4_INJECTION_TEMP           "L4.InjectionTemp"
+#define L5_INJECTION_TEMP           "L5.InjectionTemp"
+#define L6_INJECTION_TEMP           "L6.InjectionTemp"
+
+#define L1_X_DELAY                 	"L1.XDelay"
+#define L2_X_DELAY                	"L2.XDelay"
+#define L3_X_DELAY                 	"L3.XDelay"
+#define L4_X_DELAY                 	"L4.XDelay"
+#define L5_X_DELAY                 	"L5.XDelay"
+#define L6_X_DELAY                 	"L6.XDelay"
+
+#define L1_Y_FREQ                 	"L1.YFreq"
+#define L2_Y_FREQ                 	"L2.YFreq"
+#define L3_Y_FREQ                 	"L3.YFreq"
+#define L4_Y_FREQ                	"L4.YFreq"
+#define L5_Y_FREQ                 	"L5.YFreq"
+#define L6_Y_FREQ                 	"L6.YFreq"
+
+#define L1_Z_TEMP                 	"L1.ZTemp"
+#define L2_Z_TEMP                 	"L2.ZTemp"
+#define L3_Z_TEMP                 	"L3.ZTemp"
+#define L4_Z_TEMP                 	"L4.ZTemp"
+#define L5_Z_TEMP                 	"L5.ZTemp"
+#define L6_Z_TEMP                 	"L6.ZTemp"
 
 /// calib file names
 #define FILE_LIST                   "Filelist.LST"
-#define AMB_TWENTY_LCT              "AMB_020.LCT"
-#define TWENTY_FIFTYFIVE_LCT        "020_055.LCT"
-#define FIFTYFIVE_THIRTYEIGHT_LCT   "055_038.LCT"
 #define CALIBRAT_LCI                "CALIBRAT.LCI"
 #define ADJUSTED_LCI                "ADJUSTED.LCI"
 #define ROLLOVER_LCR                "ROLLOVER.LCR"
 
 #define TIMER_DELAY         6000
 #define NO_FILE             0
-#define S_AMB_20            1 
-#define S_20_55             2 
-#define S_55_38             3
-#define S_CALIBRAT          4
-#define S_ADJUSTED          5
-#define S_ROLLOVER          6 
-#define S_FILELIST          7 
+#define S_CALIBRAT         	1 
+#define S_ADJUSTED         	2 
+#define S_ROLLOVER          3 
+#define S_FILELIST          4 
 
 #define SLEEP_TIME          10
 #define SLAVE_CALIBRATION   0xFA
@@ -222,7 +257,7 @@ typedef struct PIPE_OBJECT
     int osc;
     int tempStability;
     int freqStability;
-    int calFile;
+    QString calFile;
 	bool isCal;
     QString mainDirPath;
     QString localDirPath;
@@ -251,7 +286,7 @@ typedef struct PIPE_OBJECT
     double measai;
     double trimai;
 
-	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), calFile(0), isCal(false), mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber), temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), watercut(0), oilrp(0), measai(0), trimai(0) {}
+	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), calFile(""), isCal(false), mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber), temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), watercut(0), oilrp(0), measai(0), trimai(0) {}
 
     //This is the destructor.  Will delete the array of vertices, if present.
     ~PIPE_OBJECT()
@@ -276,6 +311,7 @@ typedef struct LOOP_OBJECT
     bool isCal;
 	bool isEEA;
 	QString mode;
+	double totalInjectedVolumeCalculated;
     double calibrationLimit;
 	double injectionOilPumpRate;
     double injectionWaterPumpRate;
@@ -284,6 +320,16 @@ typedef struct LOOP_OBJECT
     double injectionMark;
     double injectionMethod;
     double pressureSensorSlope;
+    int minRefTemp;
+    int maxRefTemp;
+    int injectionTemp;
+    int xDelay;
+    double yFreq;
+    double zTemp;
+	QString filExt;
+	QString calExt;
+	QString adjExt;
+	QString rolExt;
     
 	/// register address for calibration
     int ID_SN_PIPE;
@@ -315,7 +361,7 @@ typedef struct LOOP_OBJECT
     QValueAxis * axisY;
     QValueAxis * axisY3;
 
-	LOOP_OBJECT() : isCal(false), isEEA(0), mode(""), calibrationLimit(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
+	LOOP_OBJECT() : isCal(false), isEEA(0), mode(""), totalInjectedVolumeCalculated(0), calibrationLimit(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), injectionTemp(0), xDelay(0), yFreq(0), zTemp(0), filExt(""), calExt(""), adjExt(""), rolExt(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
 
 	~LOOP_OBJECT()
 	{
@@ -367,9 +413,10 @@ public:
     int setupModbusPort_5();
     int setupModbusPort_6();
 
+	void injectWater(const bool);
 	void setProductAndCalibrationMode(const int);
     void masterPipe(int, QString, bool);
-    void prepareForNextFile(int, int);
+    void prepareForNextFile(const int, const QString);
     void writeToCalFile(int, QString);
     void closeCalibrationFile(int, int, double);
     void changeModbusInterface(const QString &port, char parity, const int);
@@ -415,10 +462,11 @@ public:
 private slots:
 
     void calibrate(const int);
+	void updateFileList(const QString, const int, const QString, const int);
+	void createCalibrateFile(const int, const int, const QString, const QString, const QString, const QString);
     void stopCalibration(int);
     void onCalibrationButtonPressed(int);
     void onRtuPortActive(bool,int);
-
     void changeSerialPort(int);
     void changeSerialPort_2(int);
     void changeSerialPort_3(int);
@@ -454,6 +502,12 @@ private slots:
     void injectionMark(int);
     void injectionMethod(int);
     void onActionPressureSensorSlope(int);
+	void onMinRefTemp(int);
+	void onMaxRefTemp(int);
+	void onInjectionTemp(int);
+    void onXDelay(int);
+    void onYFreq(int);
+    void onZTemp(int);
     void onActionMainServer();
     void onActionLocalServer();
 

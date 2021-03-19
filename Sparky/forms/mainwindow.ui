@@ -16394,61 +16394,169 @@
       <property name="title">
        <string>Loop 1</string>
       </property>
+      <widget class="QMenu" name="menuStability">
+       <property name="title">
+        <string>De;lta Stability</string>
+       </property>
+       <addaction name="actionX_seconds"/>
+       <addaction name="actionY_KHz"/>
+       <addaction name="actionZ_C"/>
+      </widget>
+      <widget class="QMenu" name="menuMinimum_Reference_Temperature">
+       <property name="title">
+        <string>Reference Temperature</string>
+       </property>
+       <addaction name="actionMin_Ref_Temp"/>
+       <addaction name="actionMax_Ref_Temp"/>
+       <addaction name="actionInjection_Temp"/>
+      </widget>
       <addaction name="actionInjection_Pump_Rates"/>
       <addaction name="actionInjection_Bucket"/>
       <addaction name="actionInjection_Mark"/>
       <addaction name="actionInjection_Method"/>
       <addaction name="actionPressure_Sensor_Slope"/>
+      <addaction name="menuMinimum_Reference_Temperature"/>
+      <addaction name="menuStability"/>
      </widget>
      <widget class="QMenu" name="menuLoop_2">
       <property name="title">
        <string>Loop 2</string>
       </property>
+      <widget class="QMenu" name="menuStability_2">
+       <property name="title">
+        <string>Delta Stability</string>
+       </property>
+       <addaction name="actionX_seconds_2"/>
+       <addaction name="actionY_KHz_2"/>
+       <addaction name="actionZ_C_2"/>
+      </widget>
+      <widget class="QMenu" name="menuReference_Temperature">
+       <property name="title">
+        <string>Reference Temperature</string>
+       </property>
+       <addaction name="actionMin_Ref_Temp_2"/>
+       <addaction name="actionMax_Ref_Temp_2"/>
+       <addaction name="actionInjection_Temp_2"/>
+      </widget>
       <addaction name="actionInjection_Pump_Rates_2"/>
       <addaction name="actionInjection_Bucket_2"/>
       <addaction name="actionInjection_Mark_2"/>
       <addaction name="actionInjection_Method_2"/>
       <addaction name="actionPressure_Sensor_Slope_2"/>
+      <addaction name="menuReference_Temperature"/>
+      <addaction name="menuStability_2"/>
      </widget>
      <widget class="QMenu" name="menuLoop_3">
       <property name="title">
        <string>Loop 3</string>
       </property>
+      <widget class="QMenu" name="menuStability_3">
+       <property name="title">
+        <string>Delta Stability</string>
+       </property>
+       <addaction name="actionX_seconds_3"/>
+       <addaction name="actionY_KHz_3"/>
+       <addaction name="actionZ_C_3"/>
+      </widget>
+      <widget class="QMenu" name="menuReference_Temperature_2">
+       <property name="title">
+        <string>Reference Temperature</string>
+       </property>
+       <addaction name="actionMin_Ref_Temp_3"/>
+       <addaction name="actionMax_Ref_Temp_3"/>
+       <addaction name="actionInjection_Temp_3"/>
+      </widget>
       <addaction name="actionInjection_Pump_Rates_3"/>
       <addaction name="actionInjection_Bucket_3"/>
       <addaction name="actionInjection_Mark_3"/>
       <addaction name="actionInjection_Method_3"/>
       <addaction name="actionPressure_Sensor_Slope_3"/>
+      <addaction name="menuReference_Temperature_2"/>
+      <addaction name="menuStability_3"/>
      </widget>
      <widget class="QMenu" name="menuLoop_4">
       <property name="title">
        <string>Loop 4</string>
       </property>
+      <widget class="QMenu" name="menuStability_4">
+       <property name="title">
+        <string>De;lta Stability</string>
+       </property>
+       <addaction name="actionX_seconds_4"/>
+       <addaction name="actionY_KHz_4"/>
+       <addaction name="actionZ_C_4"/>
+      </widget>
+      <widget class="QMenu" name="menuReference_Temperature_3">
+       <property name="title">
+        <string>Reference Temperature</string>
+       </property>
+       <addaction name="actionMin_Ref_Temp_4"/>
+       <addaction name="actionMax_Ref_Temp_4"/>
+       <addaction name="actionInjection_Temp_4"/>
+      </widget>
       <addaction name="actionInjection_Pump_Rates_4"/>
       <addaction name="actionInjection_Bucket_4"/>
       <addaction name="actionInjection_Mark_4"/>
       <addaction name="actionInjection_Method_4"/>
       <addaction name="actionPressure_Sensor_Slope_4"/>
+      <addaction name="menuReference_Temperature_3"/>
+      <addaction name="menuStability_4"/>
      </widget>
      <widget class="QMenu" name="menuLoop_5">
       <property name="title">
        <string>Loop 5</string>
       </property>
+      <widget class="QMenu" name="menuStability_5">
+       <property name="title">
+        <string>Delta Stability</string>
+       </property>
+       <addaction name="actionX_seconds_5"/>
+       <addaction name="actionY_KHz_5"/>
+       <addaction name="actionZ_C_5"/>
+      </widget>
+      <widget class="QMenu" name="menuReference_Temperature_4">
+       <property name="title">
+        <string>Reference Temperature</string>
+       </property>
+       <addaction name="actionMin_Ref_Temp_5"/>
+       <addaction name="actionMax_Ref_Temp_5"/>
+       <addaction name="actionInjection_Temp_5"/>
+      </widget>
       <addaction name="actionInjection_Pump_Rates_5"/>
       <addaction name="actionInjection_Bucket_5"/>
       <addaction name="actionInjection_Mark_5"/>
       <addaction name="actionInjection_Method_5"/>
       <addaction name="actionPressure_Sensor_Slope_5"/>
+      <addaction name="menuReference_Temperature_4"/>
+      <addaction name="menuStability_5"/>
      </widget>
      <widget class="QMenu" name="menuLoop_6">
       <property name="title">
        <string>Loop 6</string>
       </property>
+      <widget class="QMenu" name="menuStability_6">
+       <property name="title">
+        <string>Delta Stability</string>
+       </property>
+       <addaction name="actionX_seconds_6"/>
+       <addaction name="actionY_KHz_6"/>
+       <addaction name="actionZ_C_6"/>
+      </widget>
+      <widget class="QMenu" name="menuReference_Temperature_5">
+       <property name="title">
+        <string>Reference Temperature</string>
+       </property>
+       <addaction name="actionMin_Ref_Temp_6"/>
+       <addaction name="actionMax_Ref_Temp_6"/>
+       <addaction name="actionInjection_Temp_6"/>
+      </widget>
       <addaction name="actionInjection_Pump_Rates_6"/>
       <addaction name="actionInjection_Bucket_6"/>
       <addaction name="actionInjection_Mark_6"/>
       <addaction name="actionInjection_Method_6"/>
       <addaction name="actionPressure_Sensor_Slope_6"/>
+      <addaction name="menuReference_Temperature_5"/>
+      <addaction name="menuStability_6"/>
      </widget>
      <addaction name="menuLoop_1"/>
      <addaction name="menuLoop_2"/>
@@ -16743,6 +16851,186 @@
   <action name="actionPressure_Sensor_Slope_6">
    <property name="text">
     <string>Pressure Sensor Slope</string>
+   </property>
+  </action>
+  <action name="actionX_seconds">
+   <property name="text">
+    <string>Period</string>
+   </property>
+  </action>
+  <action name="actionY_KHz">
+   <property name="text">
+    <string>Frequency</string>
+   </property>
+  </action>
+  <action name="actionZ_C">
+   <property name="text">
+    <string>Temperature</string>
+   </property>
+  </action>
+  <action name="actionX_seconds_2">
+   <property name="text">
+    <string>Period</string>
+   </property>
+  </action>
+  <action name="actionY_KHz_2">
+   <property name="text">
+    <string>Frequency</string>
+   </property>
+  </action>
+  <action name="actionZ_C_2">
+   <property name="text">
+    <string>Temperature</string>
+   </property>
+  </action>
+  <action name="actionX_seconds_3">
+   <property name="text">
+    <string>Period</string>
+   </property>
+  </action>
+  <action name="actionY_KHz_3">
+   <property name="text">
+    <string>Frequency</string>
+   </property>
+  </action>
+  <action name="actionZ_C_3">
+   <property name="text">
+    <string>Temperature</string>
+   </property>
+  </action>
+  <action name="actionX_seconds_4">
+   <property name="text">
+    <string>Period</string>
+   </property>
+  </action>
+  <action name="actionY_KHz_4">
+   <property name="text">
+    <string>Frequency</string>
+   </property>
+  </action>
+  <action name="actionZ_C_4">
+   <property name="text">
+    <string>Temperature</string>
+   </property>
+  </action>
+  <action name="actionX_seconds_5">
+   <property name="text">
+    <string>Period</string>
+   </property>
+  </action>
+  <action name="actionY_KHz_5">
+   <property name="text">
+    <string>Frequency</string>
+   </property>
+  </action>
+  <action name="actionZ_C_5">
+   <property name="text">
+    <string>Temperature</string>
+   </property>
+  </action>
+  <action name="actionX_seconds_6">
+   <property name="text">
+    <string>Period</string>
+   </property>
+  </action>
+  <action name="actionY_KHz_6">
+   <property name="text">
+    <string>Frequency</string>
+   </property>
+  </action>
+  <action name="actionZ_C_6">
+   <property name="text">
+    <string>Temperature</string>
+   </property>
+  </action>
+  <action name="actionMin_Ref_Temp">
+   <property name="text">
+    <string>Min Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionMax_Ref_Temp">
+   <property name="text">
+    <string>Max Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionInjection_Temp">
+   <property name="text">
+    <string>Injection Temp</string>
+   </property>
+  </action>
+  <action name="actionMin_Ref_Temp_2">
+   <property name="text">
+    <string>Min Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionMax_Ref_Temp_2">
+   <property name="text">
+    <string>Max Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionInjection_Temp_2">
+   <property name="text">
+    <string>Injection Temp</string>
+   </property>
+  </action>
+  <action name="actionMin_Ref_Temp_3">
+   <property name="text">
+    <string>Min Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionMax_Ref_Temp_3">
+   <property name="text">
+    <string>Max Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionInjection_Temp_3">
+   <property name="text">
+    <string>Injection Temp</string>
+   </property>
+  </action>
+  <action name="actionMin_Ref_Temp_4">
+   <property name="text">
+    <string>Min Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionMax_Ref_Temp_4">
+   <property name="text">
+    <string>Max Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionInjection_Temp_4">
+   <property name="text">
+    <string>Injection Temp</string>
+   </property>
+  </action>
+  <action name="actionMin_Ref_Temp_5">
+   <property name="text">
+    <string>Min Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionMax_Ref_Temp_5">
+   <property name="text">
+    <string>Max Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionInjection_Temp_5">
+   <property name="text">
+    <string>Injection Temp</string>
+   </property>
+  </action>
+  <action name="actionMin_Ref_Temp_6">
+   <property name="text">
+    <string>Min Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionMax_Ref_Temp_6">
+   <property name="text">
+    <string>Max Ref Temp</string>
+   </property>
+  </action>
+  <action name="actionInjection_Temp_6">
+   <property name="text">
+    <string>Injection Temp</string>
    </property>
   </action>
  </widget>
