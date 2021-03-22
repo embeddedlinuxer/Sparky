@@ -1007,9 +1007,8 @@ updateChart(QGridLayout * layout, QChartView * chartView, QChart * chart, QSplin
 
 void
 MainWindow::
-updateWatercut(double value)
+updateLoopStatus(const int loop, const double a, const double b, const double c)
 {
-   ui->lcdNumber_26->display(value);
 }
 
 
@@ -3542,9 +3541,9 @@ createCalibrateFile(const int sn, const int pipe, const QString startValue, cons
         header22 = "ROLLOVER:  "+rolloverValue+" % "+"to "+"rollover\n";
 
 		/// set filenames
-		PIPE[pipe].fileCalibrate.setFileName(PIPE[pipe].mainDirPath+"\\"+QString(filename).append(LOOP[pipe/3].calExt));
-		PIPE[pipe].fileAdjusted.setFileName(PIPE[pipe].mainDirPath+"\\"+QString(filename).append(LOOP[pipe/3].adjExt));
-		PIPE[pipe].fileRollover.setFileName(PIPE[pipe].mainDirPath+"\\"+QString(filename).append(LOOP[pipe/3].rolExt));
+		PIPE[pipe].fileCalibrate.setFileName(PIPE[pipe].mainDirPath+"\\"+QString("CALIBRAT").append(LOOP[pipe/3].calExt));
+		PIPE[pipe].fileAdjusted.setFileName(PIPE[pipe].mainDirPath+"\\"+QString("ADJUSTED").append(LOOP[pipe/3].adjExt));
+		PIPE[pipe].fileRollover.setFileName(PIPE[pipe].mainDirPath+"\\"+QString("ROLLOVER").append(LOOP[pipe/3].rolExt));
 
         /// update PIPE object 
         if (filename == "CALIBRAT") 
@@ -3610,7 +3609,7 @@ updateFileList(const QString fileName, const int sn, const QString mode, const i
 	/// write header to streamList
     if (QFileInfo(file).exists())
 	{
-		if (QFileInfo(file).size() == 0) streamList << header0 << '\n' << header1 << '\n' << '\n';
+		if (QFileInfo(file).size() == 0) streamList << header0 << '\n' << header1 << '\n' << '\n' << fileName << '\n';
     	else streamList << fileName << '\n';
 	}
 
@@ -3622,8 +3621,6 @@ void
 MainWindow::
 createLoopFile(const int sn, const QString mode, const QString startValue, const QString stopValue, const QString saltValue, const int pipe)
 {
-    QFile file;
-
 	/// set file names
     QDateTime currentDataTime = QDateTime::currentDateTime();
     QString fileName = QString(startValue).append("_").append(stopValue).append(LOOP[pipe/3].filExt);
@@ -3638,24 +3635,20 @@ createLoopFile(const int sn, const QString mode, const QString startValue, const
     QString header4 = HEADER4;
     QString header5 = HEADER5;
 
-    /// complete file path
-    file.setFileName(PIPE[pipe].mainDirPath+"\\"+fileName);
-      
     /// update PIPE object for later use
     PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+fileName);
 
     /// stream
-    QTextStream stream(&file);
-
+    QTextStream stream(&PIPE[pipe].file);
 
     /// open file
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    PIPE[pipe].file.open(QIODevice::WriteOnly | QIODevice::Text);
 
     /// write headers to stream
     stream << header0 << '\n' << header1 << '\n' << header2 << '\n' << header3 << '\n' << header4 << '\n' << header5 << '\n';
 
     /// close file
-    file.close();
+    PIPE[pipe].file.close();
 
 	/// update file list
 	updateFileList(fileName, sn, mode, pipe);
@@ -3884,9 +3877,7 @@ prepareCalibration(const int loop)
    			PIPE[pipe].etimer->restart();
    			PIPE[pipe].mainDirPath = m_mainServer+LOOP[loop].mode+PIPE[pipe].slave->text(); 
 
-			/// initial calibration filename
-   			(LOOP[loop].mode == LOW) ? PIPE[pipe].calFile = QString("AMB").append("_").append(QString::number(LOOP[loop].minRefTemp)).append(LOOP[loop].filExt) : 
-															QString("AMB").append("_").append(QString::number(LOOP[loop].minRefTemp)).append(LOOP[loop].filExt); 
+			if (LOOP[loop].mode == LOW) prepareForNextFile(pipe, QString("AMB").append("_").append(QString::number(LOOP[loop].minRefTemp)).append(LOOP[loop].filExt));
 
 			if (ui->radioButton_7->isChecked()) PIPE[pipe].osc = 1;
    			else if (ui->radioButton_8->isChecked()) PIPE[pipe].osc = 2;
@@ -4184,21 +4175,35 @@ calibrate(const int pipe)
         PIPE[pipe].watercut = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_WATERCUT, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
         QThread::msleep(SLEEP_TIME);
 
-        /// get temperature, verify delta temperature and update stability
+        /// get temperature
         PIPE[pipe].temperature = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-        ((PIPE[pipe].temperature - PIPE[pipe].temperature_prev) <= abs(LOOP[loop].zTemp)) ? PIPE[pipe].tempStability++ : PIPE[pipe].tempStability = 0;
-        PIPE[pipe].temperature_prev = PIPE[pipe].temperature;
-        if (PIPE[pipe].tempStability > 5) PIPE[pipe].tempStability = 5;
-        if (PIPE[pipe].tempStability < 0) PIPE[pipe].tempStability = 0;
+
+		/// check temp stability
+        if (PIPE[pipe].tempStability < 5) 
+		{
+			if (abs(PIPE[pipe].temperature - PIPE[pipe].temperature_prev) <= LOOP[loop].zTemp) PIPE[pipe].tempStability++;
+			else PIPE[pipe].tempStability = 0;
+
+			PIPE[pipe].temperature_prev = PIPE[pipe].temperature;
+		}
+		else PIPE[pipe].tempStability = 5;
+
         updateStability(T_BAR, pipe, PIPE[pipe].tempStability*20);
         QThread::msleep(SLEEP_TIME);
 
-        /// get frequency, verify delta frequency and update stability
+        /// get frequency
         PIPE[pipe].frequency = sendCalibrationRequest(FLOAT_R, LOOP[loop].serialModbus, FUNC_READ_FLOAT, LOOP[loop].ID_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-        ((PIPE[pipe].frequency - PIPE[pipe].frequency_prev) <= abs(LOOP[loop].yFreq)) ? PIPE[pipe].freqStability++ : PIPE[pipe].freqStability = 0;
-        PIPE[pipe].frequency_prev = PIPE[pipe].frequency;
-        if (PIPE[pipe].freqStability > 5) PIPE[pipe].freqStability = 5;
-        if (PIPE[pipe].freqStability < 0) PIPE[pipe].freqStability = 0;
+
+		/// check freq stability
+		if (PIPE[pipe].freqStability < 5) 
+		{
+        	if (abs(PIPE[pipe].frequency - PIPE[pipe].frequency_prev) <= LOOP[loop].yFreq) PIPE[pipe].freqStability++;
+			else PIPE[pipe].freqStability = 0;
+
+        	PIPE[pipe].frequency_prev = PIPE[pipe].frequency;
+		}
+		else PIPE[pipe].freqStability = 5;
+
         updateStability(F_BAR, pipe, PIPE[pipe].freqStability*20);
         QThread::msleep(SLEEP_TIME);
 
@@ -4217,84 +4222,63 @@ calibrate(const int pipe)
         /// update pipe reading
         updatePipeReading(pipe, PIPE[pipe].watercut, PIPE[pipe].frequency, PIPE[pipe].frequency, PIPE[pipe].temperature, PIPE[pipe].oilrp);
 
-        /// create a message
+        /// read data 
         QString data_stream;
 		data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14").arg(elapsedTime, 9, 'g', -1, ' ').arg(PIPE[pipe].watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(0,12,'f',2,' ');
 
-        /// write data - mode check
+		///////////////////////////
+		///////////////////////////
+        /// LOWCUT
+		///////////////////////////
+		///////////////////////////
+		
         if (LOOP[loop].mode == LOW)
         {
-			///
-			/// AMB TO LOOP[loop].minRefTemp
-			///
-            if (PIPE[pipe].calFile == QString("AMB").append("_").append(QString::number(LOOP[loop].minRefTemp)).append(LOOP[loop].filExt)) // AMB -> LOOP[loop].minRefTemp
+			/// AMB_"LOOP[loop].minRefTemp".LCT
+            if (QFileInfo(PIPE[pipe].file).fileName() == QString("AMB").append("_").append(QString::number(LOOP[loop].minRefTemp)).append(LOOP[loop].filExt))
             {
-				///
                 /// validate run condition 
-				///
-                if (PIPE[pipe].checkBox->isChecked() && (PIPE[pipe].temperature > LOOP[loop].minRefTemp) && ((PIPE[pipe].freqStability != 5) || (PIPE[pipe].freqStability != 5)))
+                if (PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
                 {
-					///
                     /// create a new file if needed
-					///
                     if (!QFileInfo(PIPE[pipe].file).exists()) 
                     {
-						///
 						/// reset injectionTime
-						///
 						injectionTime = 0;
 						totalInjectionTime = 0;
 						nextWatercut = 0.25;
 
-						///
-                        /// ask the user to enter measured initial watercut 
-						///
+                        /// enter measured initial watercut 
                         bool ok;
                         QString msg = PIPE[pipe].slave->text().append(": Enter Measured Initial Watercut");
                         LOOP[loop].waterRunStop->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),tr(qPrintable(msg)), QLineEdit::Normal,"0.0", &ok));
 
-						///
 						/// update data_stream with the user entered initial watercut
-						///
-						data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14").arg(elapsedTime, 9, 'g', -1, ' ').arg(PIPE[pipe].watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(0,12,'f',2,' ');
+						data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14").arg(elapsedTime, 9, 'g', -1, ' ').arg(LOOP[loop].waterRunStop->text().toDouble(),7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(0,12,'f',2,' ');
 
-						///
                         /// indicate the operator to set temp to LOOP[loop].minRefTemp C degrees
-						///
                         if (getUserInputMessage(QString("LOOP ")+QString::number(loop + 1)+QString(", PIPE ")+QString::number(pipe%3+1), PIPE[pipe].slave->text().append(": Set The Heat Exchanger Temperature"), QString::number(LOOP[loop].minRefTemp).append("°C"))) createLoopFile(PIPE[pipe].slave->text().toInt(), LOOP[loop].mode, "AMB", QString::number(LOOP[loop].minRefTemp), LOOP[loop].saltStop->currentText(), pipe);
                         else 
 						{
 							stopCalibration(pipe);
 							return;
 						}
+
+                        /// indicate the operator to fill the water container to the mark 
                 		displayMessage(QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),QString("Serial Number: ")+PIPE[pipe].slave->text()+QString("                              "),"Fill the water container to the mark");
                     }
-  
-                    /// write to file
+
                     writeToCalFile(pipe, data_stream);
                 }
                 else 
                 {
-                    /// ask user measured watercut 
-                    bool ok;
-                    QString msg = PIPE[pipe].slave->text().append(": Enter Measured Watercut");
-                    double d = QInputDialog::getDouble(this, QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),tr(qPrintable(msg)), 0.0, 0, 100, 2, &ok,Qt::WindowFlags(), 1);
-
-                    /// validate filename and close
-                    closeCalibrationFile(pipe, elapsedTime, d);
-
-                    /// prepare for next file
                     prepareForNextFile(pipe, QString::number(LOOP[loop].minRefTemp).append("_").append(QString::number(LOOP[loop].maxRefTemp)).append(LOOP[loop].filExt));
                 }
             }
-			///
-			/// LOOP[loop].minRefTemp TO LOOP[loop].maxRefTemp
-			///
-            else if (PIPE[pipe].calFile == QString::number(LOOP[loop].minRefTemp).append("_").append(QString::number(LOOP[loop].maxRefTemp)).append(LOOP[loop].filExt)) // LOOP[loop].minRefTemp -> LOOP[loop].maxRefTemp
+            else if (QFileInfo(PIPE[pipe].file).fileName() == QString::number(LOOP[loop].minRefTemp).append("_").append(QString::number(LOOP[loop].maxRefTemp)).append(LOOP[loop].filExt))
             {
-                if (PIPE[pipe].checkBox->isChecked() && (PIPE[pipe].temperature < LOOP[loop].maxRefTemp) && ((PIPE[pipe].freqStability != 5) || (PIPE[pipe].freqStability != 5))) // run? 
+                if (PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
                 {
-                    /// create a new file if needed
                     if (!QFileInfo(PIPE[pipe].file).exists()) 
                     {
                         if (getUserInputMessage(QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1), PIPE[pipe].slave->text().append(": Set Heat Exchanger Temperature"),QString::number(LOOP[loop].maxRefTemp).append("°C"))) createLoopFile(PIPE[pipe].slave->text().toInt(), LOOP[loop].mode, QString::number(LOOP[loop].minRefTemp), QString::number(LOOP[loop].maxRefTemp), LOOP[loop].saltStop->currentText(), pipe);
@@ -4304,43 +4288,21 @@ calibrate(const int pipe)
 							return;
 						}
                     }
-            
-                    /// write to file
+
                     writeToCalFile(pipe, data_stream);
                 }
                 else 
                 {
-					///
-                    /// ask user measured watercut
-					///
-                    bool ok;
-                    QString msg = PIPE[pipe].slave->text().append(": Enter Measured Watercut");
-                    double d = QInputDialog::getDouble(this, QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),tr(qPrintable(msg)), 0.0, 0, 100, 2, &ok,Qt::WindowFlags(), 1);
-
-					///
-                    /// validate filename & close
-					///
-                    closeCalibrationFile(pipe, elapsedTime, d);
-
-					///
-                    /// prepare for next file
-					///
                     prepareForNextFile(pipe, QString::number(LOOP[loop].maxRefTemp).append("_").append(QString::number(LOOP[loop].injectionTemp)).append(LOOP[loop].filExt));
                 }
             }
-			///
-			/// LOOP[loop].maxRefTemp TO LOOP[loop].injectionTemp
-			///
-            else if (PIPE[pipe].calFile == QString::number(LOOP[loop].maxRefTemp).append("_").append(QString::number(LOOP[loop].injectionTemp)).append(LOOP[loop].filExt)) // LOOP[loop].maxRefTemp -> LOOP[loop].injectionTemp
+            else if (QFileInfo(PIPE[pipe].file).fileName() == QString::number(LOOP[loop].maxRefTemp).append("_").append(QString::number(LOOP[loop].injectionTemp)).append(LOOP[loop].filExt))
             {
-                if (PIPE[pipe].checkBox->isChecked() && (PIPE[pipe].temperature > LOOP[loop].injectionTemp) && ((PIPE[pipe].freqStability != 5) || (PIPE[pipe].freqStability != 5))) // run? 
+                if (PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
                 {
-					///
-                    /// create a new file if needed
-					///
                     if (!QFileInfo(PIPE[pipe].file).exists()) 
                     {
-                        if (getUserInputMessage(QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1), PIPE[pipe].slave->text().append(": Set Heat Exchanger Temperature"),QString::number(LOOP[loop].maxRefTemp).append("°C"))) createLoopFile(PIPE[pipe].slave->text().toInt(), LOOP[loop].mode, QString::number(LOOP[loop].minRefTemp), QString::number(LOOP[loop].maxRefTemp), LOOP[loop].saltStop->currentText(), pipe);
+                        if (getUserInputMessage(QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1), PIPE[pipe].slave->text().append(": Set Heat Exchanger Temperature"),QString::number(LOOP[loop].injectionTemp).append("°C"))) createLoopFile(PIPE[pipe].slave->text().toInt(), LOOP[loop].mode, QString::number(LOOP[loop].maxRefTemp), QString::number(LOOP[loop].injectionTemp), LOOP[loop].saltStop->currentText(), pipe);
                         else 
 						{
 							stopCalibration(pipe);
@@ -4348,73 +4310,43 @@ calibrate(const int pipe)
 						}
                     }
             
-					///
-                    /// write to file
-					///
                     writeToCalFile(pipe, data_stream);
                 }
                 else 
                 {
-					///
-                    /// ask user measured watercut
-					///
-                    bool ok;
-                    QString msg = PIPE[pipe].slave->text().append(": Enter Measured Watercut");
-                    double d = QInputDialog::getDouble(this, QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),tr(qPrintable(msg)), 0.0, 0, 100, 2, &ok,Qt::WindowFlags(), 1);
-
-					///
-                    /// validate filename & close
-					///
-                    closeCalibrationFile(pipe, elapsedTime, d);
-
-					///
-                    /// prepare for next file
-					///
-                    prepareForNextFile(pipe,QFileInfo(PIPE[pipe].fileCalibrate).fileName());
+                    prepareForNextFile(pipe,"CALIBRAT.LCI");
                 }
             }
-			///
+
+			///////////////////////////////////
+			///////////////////////////////////
 			/// start real calibration 
-			///
-            else if (PIPE[pipe].calFile == QFileInfo(PIPE[pipe].fileCalibrate).fileName()) // CALIBRAT.LCI 
+			///////////////////////////////////
+			///////////////////////////////////
+			
+            else if (QFileInfo(PIPE[pipe].file).fileName() == "CALIBRAT.LCI") // CALIBRAT.LCI 
             {   
-				///
 				/// waterRunStart is actually the MAX watercut value in LOWCUT mode 
-				///
-                if (PIPE[pipe].checkBox->isChecked() && (PIPE[pipe].watercut < LOOP[loop].waterRunStart->text().toDouble()) && ((PIPE[pipe].freqStability != 5) || (PIPE[pipe].freqStability != 5))) // run?
+                if (PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5))) // run?
                 {
-					///
                     /// create a new file if needed
-					///
-        			if (!QFileInfo(PIPE[pipe].fileCalibrate).exists()) 
+        			if (!QFileInfo(PIPE[pipe].file).exists()) 
                     {
-						///
-						/// ask the user to enter measured initial watercut 
-						///
                         bool ok;
                         QString msg = PIPE[pipe].slave->text().append(": Enter Measured Initial Watercut");
                         LOOP[loop].waterRunStop->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),tr(qPrintable(msg)), QLineEdit::Normal,"0.0", &ok));
 
-						///
-						/// update data_stream with the user entered initial watercut
-						///
-						data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14").arg(elapsedTime, 9, 'g', -1, ' ').arg(PIPE[pipe].watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(0,12,'f',2,' ');
+						data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14").arg(elapsedTime, 9, 'g', -1, ' ').arg(LOOP[loop].waterRunStop->text().toDouble(),7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(0,12,'f',2,' ');
 
-						///
-						/// create CALIBRAT.LCI
-						///
-						createCalibrateFile(PIPE[pipe].slave->text().toInt(), pipe, LOOP[pipe/3].waterRunStop->text(), LOOP[pipe/3].waterRunStart->text(), 0, "ADJUSTED");
+						createCalibrateFile(PIPE[pipe].slave->text().toInt(), pipe, LOOP[pipe/3].waterRunStop->text(), LOOP[pipe/3].waterRunStart->text(), 0, "CALIBRAT");
                     }
 
-					///
-                    /// write to file
-					///
                     writeToCalFile(pipe, data_stream);
 
 					///
-					/// calculate injection time
+					/// calculate next injection time and accumulate totalInjectionTime
 					///
-					injectionTime = -((LOOP[loop].loopVolume->text().toDouble())/(LOOP[loop].injectionWaterPumpRate/60))*log((1-(nextWatercut - LOOP[loop].waterRunStop->text().toDouble())/100)) - injectionTime;
+					injectionTime = -(LOOP[loop].loopVolume->text().toDouble()/LOOP[loop].injectionWaterPumpRate)*log((1-(nextWatercut - LOOP[loop].waterRunStop->text().toDouble())/100)) - injectionTime;
 					nextWatercut += 0.25;
 					totalInjectionTime += injectionTime;
 
@@ -4431,27 +4363,53 @@ calibrate(const int pipe)
 					QString msg;
 
 					///
-                    /// ask user measured watercut
+                    /// enter measured watercut
 					///
                     msg = PIPE[pipe].slave->text().append(": Enter Measured Watercut");
-                    double d = QInputDialog::getDouble(this, QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),tr(qPrintable(msg)), 0.0, 0, 100, 2, &ok,Qt::WindowFlags(), 1);
+                    double measuredWatercut = QInputDialog::getDouble(this, QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),tr(qPrintable(msg)), 0.0, 0, 100, 2, &ok,Qt::WindowFlags(), 1);
 
 					///
                     /// ask user total injected volume 
 					///
 					msg = PIPE[pipe].slave->text().append(": Enter Injected Volume");
-	                double injectedVolume = QInputDialog::getDouble(this, QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),tr(qPrintable(msg)), 0.0, 0, 100, 2, &ok,Qt::WindowFlags(), 1);
+	                double injectedVolume = QInputDialog::getDouble(this, QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),tr(qPrintable(msg)), 0.0, 0, 10000, 6, &ok,Qt::WindowFlags(), 1);
 
 					///
 					/// compare injectedVolume with totalInjectedVolumeCalculated
 					///
-				 	if (abs(injectedVolume - (LOOP[loop].injectionWaterPumpRate/60)*totalInjectionTime) > 0)
-						createCalibrateFile(PIPE[pipe].slave->text().toInt(), pipe, LOOP[pipe/3].waterRunStop->text(), LOOP[pipe/3].waterRunStart->text(), 0, "ADJUSTED");
+				 	if (abs(injectedVolume - (LOOP[loop].injectionWaterPumpRate)*totalInjectionTime) > 0) 
+					{
+						QFile::copy(PIPE[pipe].fileCalibrate.fileName(),PIPE[pipe].fileAdjusted.fileName());
+
+						/// TODO
+						// modify watercut in ADJUSTED.LCI here
+					}
 
 					///
-                    /// validate filename and close
+                    /// finalize and close
 					///
-                    closeCalibrationFile(pipe, elapsedTime, d);
+    				QDateTime currentDataTime = QDateTime::currentDateTime();
+    				QString data_stream   = QString("Total injection time   = %1 s").arg(totalInjectionTime, 10, 'g', -1, ' ');
+    				QString data_stream_2 = QString("Total injection volume = %1 mL").arg(injectedVolume, 10, 'g', -1, ' ');
+    				QString data_stream_3 = QString("Loop volume            = %1 mL").arg(LOOP[loop].loopVolume->text().toDouble(), 10, 'g', -1, ' ');
+    				QString data_stream_4 = QString("Measured watercut      = %1 %").arg(measuredWatercut, 10, 'f', 2, ' ');
+    				QString data_stream_5 = QString("[%1]").arg(currentDataTime.toString());
+
+					if (QFileInfo(PIPE[pipe].fileCalibrate).exists())
+					{
+						QTextStream stream(&PIPE[pipe].fileCalibrate);
+    					PIPE[pipe].fileCalibrate.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+    					stream << '\n' << '\n' << data_stream << '\n' << data_stream_2 << '\n' << data_stream_3 << '\n' << data_stream_4 << '\n' << data_stream_5 << '\n';
+    					PIPE[pipe].fileCalibrate.close();
+					}
+
+					if (QFileInfo(PIPE[pipe].fileAdjusted).exists())
+					{
+						QTextStream stream(&PIPE[pipe].fileAdjusted);
+    					PIPE[pipe].fileAdjusted.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+    					stream << '\n' << '\n' << data_stream << '\n' << data_stream_2 << '\n' << data_stream_3 << '\n' << data_stream_4 << '\n' << data_stream_5 << '\n';
+    					PIPE[pipe].fileAdjusted.close();
+					}
 
 					///
                     /// stop calibration
@@ -4470,10 +4428,10 @@ calibrate(const int pipe)
             if (LOOP[loop].isCal && PIPE[pipe].checkBox->isChecked()) QTimer::singleShot(LOOP[loop].xDelay*1000, [this, pipe] () {calibrate(pipe);}); /// xDelay * 1000 = xDelay seconds
             else 
             {
+				stopCalibration(pipe);
                 updateStartButtonLabel(loop);
                 PIPE[pipe].checkBox->setChecked(false);
                 displayMessage(QString("LOOP ")+QString::number(pipe/3 + 1)+QString(", PIPE ")+QString::number(pipe%3+1),QString("Serial Number: ")+PIPE[pipe].slave->text()+QString("                                    "),"Calibration Finished Successfully!");
-				stopCalibration(pipe);
             }
         }
     }
@@ -4506,7 +4464,6 @@ MainWindow::
 prepareForNextFile(const int pipe, const QString nextFileId)
 {
     PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+nextFileId);
-    PIPE[pipe].calFile = nextFileId;
     PIPE[pipe].freqStability = 0;
     PIPE[pipe].tempStability = 0;
 
@@ -4521,35 +4478,10 @@ writeToCalFile(int pipe, QString data_stream)
 {
     /// write to file
     QTextStream stream(&PIPE[pipe].file);
-    QTextStream streamCalibrate(&PIPE[pipe].fileCalibrate);
     PIPE[pipe].file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
-    PIPE[pipe].fileCalibrate.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
     stream << data_stream << '\n' ;
-    streamCalibrate << data_stream << '\n';
-    PIPE[pipe].file.close();
-    PIPE[pipe].fileCalibrate.close();
-}
-
-
-
-void
-MainWindow::
-closeCalibrationFile(int pipe, int elapsedTime, double d)
-{
-    int loop = pipe/3;
-
-    QDateTime currentDataTime = QDateTime::currentDateTime();
-    QString data_stream   = QString("Total injection time   = %1 s").arg(elapsedTime, 10, 'g', -1, ' ');
-    QString data_stream_2 = QString("Total injection volume = %1 mL").arg(elapsedTime, 10, 'g', -1, ' ');
-    QString data_stream_3 = QString("Loop volume            = %1 mL").arg(LOOP[loop].loopVolume->text().toDouble(), 10, 'g', -1, ' ');
-    QString data_stream_4 = QString("Measured watercut      = %1 %").arg(d, 10, 'f', 2, ' ');
-    QString data_stream_5 = QString("[%1]").arg(currentDataTime.toString());
-    QTextStream stream(&PIPE[pipe].file);
-    PIPE[pipe].file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
-    stream << '\n' << '\n' << data_stream << '\n' << data_stream_2 << '\n' << data_stream_3 << '\n' << data_stream_4 << '\n' << data_stream_5 << '\n';
     PIPE[pipe].file.close();
 }
-
 
 
 void
