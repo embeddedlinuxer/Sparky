@@ -48,7 +48,7 @@
     </property>
     <widget class="QWidget" name="tab_8">
      <attribute name="title">
-      <string>L1</string>
+      <string>LOOP</string>
      </attribute>
      <widget class="QGroupBox" name="groupBox_18">
       <property name="geometry">
