@@ -23,9 +23,7 @@
 #include "modbus.h"
 #include "qcgaugewidget.h"
 
-#define RELEASE_VERSION             "0.0.7"
-#define MAX_LOOP                    6
-#define MAX_PIPE                    18
+#define RELEASE_VERSION             "0.0.8"
 #define RAZ                         0 
 #define EEA                         1 
 
@@ -57,37 +55,12 @@
 
 /// loop
 #define L1                          0
-#define L2                          1 
-#define L3                          2 
-#define L4                          3 
-#define L5                          4 
-#define L6                          5 
 
 /// pipe
 #define P1                          0
 #define P2                          1
 #define P3                          2
-
-/// loop + pipe
-#define L1P1                         0
-#define L1P2                         1
-#define L1P3                         2
-#define L2P1                         3 
-#define L2P2                         4 
-#define L2P3                         5
-#define L3P1                         6 
-#define L3P2                         7 
-#define L3P3                         8 
-#define L4P1                         9 
-#define L4P2                         10 
-#define L4P3                         11 
-#define L5P1                         12 
-#define L5P2                         13 
-#define L5P3                         14 
-#define L6P1                         15 
-#define L6P2                         16 
-#define L6P3                         17 
-#define ALL                          18
+#define ALL                         3
 
 #define EEA_INJECTION_FILE          "EEA INJECTION FILE"
 #define RAZ_INJECTION_FILE          "RAZOR INJECTION FILE"
@@ -99,102 +72,23 @@
 /////// JSON KEYS ////////
 //////////////////////////
 
-#define L1_OIL_PUMP_RATE            "L1.OilPumpRate"
-#define L2_OIL_PUMP_RATE            "L2.OilPumpRate"
-#define L3_OIL_PUMP_RATE            "L3.OilPumpRate"
-#define L4_OIL_PUMP_RATE            "L4.OilPumpRate"
-#define L5_OIL_PUMP_RATE            "L5.OilPumpRate"
-#define L6_OIL_PUMP_RATE            "L6.OilPumpRate"
+#define LOOP_OIL_PUMP_RATE            "LOOP.OilPumpRate"
+#define LOOP_WATER_PUMP_RATE          "LOOP.WaterPumpRate"
+#define LOOP_SMALL_WATER_PUMP_RATE    "LOOP.SmallWaterPumpRate"
+#define LOOP_BUCKET                   "LOOP.Bucket"
+#define LOOP_MARK                     "LOOP.Mark"
+#define LOOP_METHOD                   "LOOP.Method"
+#define LOOP_PRESSURE                 "LOOP.PresssureSensorSlope"
+#define LOOP_MIN_TEMP                 "LOOP.MinRefTemp"
+#define LOOP_MAX_TEMP                 "LOOP.MaxRefTemp"
+#define LOOP_INJECTION_TEMP           "LOOP.InjectionTemp"
+#define LOOP_X_DELAY                  "LOOP.XDelay"
+#define LOOP_Y_FREQ                   "LOOP.YFreq"
+#define LOOP_Z_TEMP                   "LOOP.ZTemp"
+#define LOOP_INTERVAL_CALIBRATION     "LOOP.IntervalCalibration"
+#define LOOP_INTERVAL_ROLLOVER  	  "LOOP.IntervalRollover"
 
-#define L1_WATER_PUMP_RATE          "L1.WaterPumpRate"
-#define L2_WATER_PUMP_RATE          "L2.WaterPumpRate"
-#define L3_WATER_PUMP_RATE          "L3.WaterPumpRate"
-#define L4_WATER_PUMP_RATE          "L4.WaterPumpRate"
-#define L5_WATER_PUMP_RATE          "L5.WaterPumpRate"
-#define L6_WATER_PUMP_RATE          "L6.WaterPumpRate"
-
-#define L1_SMALL_WATER_PUMP_RATE    "L1.SmallWaterPumpRate"
-#define L2_SMALL_WATER_PUMP_RATE    "L2.SmallWaterPumpRate"
-#define L3_SMALL_WATER_PUMP_RATE    "L3.SmallWaterPumpRate"
-#define L4_SMALL_WATER_PUMP_RATE    "L4.SmallWaterPumpRate"
-#define L5_SMALL_WATER_PUMP_RATE    "L5.SmallWaterPumpRate"
-#define L6_SMALL_WATER_PUMP_RATE    "L6.SmallWaterPumpRate"
-
-#define L1_BUCKET                   "L1.Bucket"
-#define L2_BUCKET                   "L2.Bucket"
-#define L3_BUCKET                   "L3.Bucket"
-#define L4_BUCKET                   "L4.Bucket"
-#define L5_BUCKET                   "L5.Bucket"
-#define L6_BUCKET                   "L6.Bucket"
-
-#define L1_MARK                     "L1.Mark"
-#define L2_MARK                     "L2.Mark"
-#define L3_MARK                     "L3.Mark"
-#define L4_MARK                     "L4.Mark"
-#define L5_MARK                     "L5.Mark"
-#define L6_MARK                     "L6.Mark"
-
-#define L1_METHOD                   "L1.Method"
-#define L2_METHOD                   "L2.Method"
-#define L3_METHOD                   "L3.Method"
-#define L4_METHOD                   "L4.Method"
-#define L5_METHOD                   "L5.Method"
-#define L6_METHOD                   "L6.Method"
-
-#define L1_PRESSURE                 "L1.PresssureSensorSlope"
-#define L2_PRESSURE                 "L2.PresssureSensorSlope"
-#define L3_PRESSURE                 "L3.PresssureSensorSlope"
-#define L4_PRESSURE                 "L4.PresssureSensorSlope"
-#define L5_PRESSURE                 "L5.PresssureSensorSlope"
-#define L6_PRESSURE                 "L6.PresssureSensorSlope"
-
-#define L1_MIN_TEMP                 "L1.MinRefTemp"
-#define L2_MIN_TEMP                 "L2.MinRefTemp"
-#define L3_MIN_TEMP                 "L3.MinRefTemp"
-#define L4_MIN_TEMP                 "L4.MinRefTemp"
-#define L5_MIN_TEMP                 "L5.MinRefTemp"
-#define L6_MIN_TEMP                 "L6.MinRefTemp"
-
-#define L1_MAX_TEMP                 "L1.MaxRefTemp"
-#define L2_MAX_TEMP                 "L2.MaxRefTemp"
-#define L3_MAX_TEMP                 "L3.MaxRefTemp"
-#define L4_MAX_TEMP                 "L4.MaxRefTemp"
-#define L5_MAX_TEMP                 "L5.MaxRefTemp"
-#define L6_MAX_TEMP                 "L6.MaxRefTemp"
-
-#define L1_INJECTION_TEMP           "L1.InjectionTemp"
-#define L2_INJECTION_TEMP           "L2.InjectionTemp"
-#define L3_INJECTION_TEMP           "L3.InjectionTemp"
-#define L4_INJECTION_TEMP           "L4.InjectionTemp"
-#define L5_INJECTION_TEMP           "L5.InjectionTemp"
-#define L6_INJECTION_TEMP           "L6.InjectionTemp"
-
-#define L1_X_DELAY                 	"L1.XDelay"
-#define L2_X_DELAY                	"L2.XDelay"
-#define L3_X_DELAY                 	"L3.XDelay"
-#define L4_X_DELAY                 	"L4.XDelay"
-#define L5_X_DELAY                 	"L5.XDelay"
-#define L6_X_DELAY                 	"L6.XDelay"
-
-#define L1_Y_FREQ                 	"L1.YFreq"
-#define L2_Y_FREQ                 	"L2.YFreq"
-#define L3_Y_FREQ                 	"L3.YFreq"
-#define L4_Y_FREQ                	"L4.YFreq"
-#define L5_Y_FREQ                 	"L5.YFreq"
-#define L6_Y_FREQ                 	"L6.YFreq"
-
-#define L1_Z_TEMP                 	"L1.ZTemp"
-#define L2_Z_TEMP                 	"L2.ZTemp"
-#define L3_Z_TEMP                 	"L3.ZTemp"
-#define L4_Z_TEMP                 	"L4.ZTemp"
-#define L5_Z_TEMP                 	"L5.ZTemp"
-#define L6_Z_TEMP                 	"L6.ZTemp"
-
-/// calib file names
 #define FILE_LIST                   "Filelist.LST"
-#define CALIBRAT_LCI                "CALIBRAT.LCI"
-#define ADJUSTED_LCI                "ADJUSTED.LCI"
-#define ROLLOVER_LCR                "ROLLOVER.LCR"
 
 #define TIMER_DELAY         6000
 #define NO_FILE             0
@@ -284,12 +178,13 @@ typedef struct PIPE_OBJECT
     double temperature_prev;
     double frequency;
     double frequency_prev;
+    double frequency_start;
     double watercut;
     double oilrp;
     double measai;
     double trimai;
 
-	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), calFile(""), isCal(false), mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber), temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), watercut(0), oilrp(0), measai(0), trimai(0) {}
+	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), calFile(""), isCal(false), mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber), temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), frequency_start(0), watercut(0), oilrp(0), measai(0), trimai(0) {}
 
     //This is the destructor.  Will delete the array of vertices, if present.
     ~PIPE_OBJECT()
@@ -327,6 +222,8 @@ typedef struct LOOP_OBJECT
     int xDelay;
     double yFreq;
     double zTemp;
+	double intervalCalibration;
+	double intervalRollover;
 	QString filExt;
 	QString calExt;
 	QString adjExt;
@@ -362,7 +259,7 @@ typedef struct LOOP_OBJECT
     QValueAxis * axisY;
     QValueAxis * axisY3;
 
-	LOOP_OBJECT() : isCal(false), isEEA(0), mode(""), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), injectionTemp(0), xDelay(0), yFreq(0), zTemp(0), filExt(""), calExt(""), adjExt(""), rolExt(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
+	LOOP_OBJECT() : isCal(false), isEEA(0), mode(""), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), injectionTemp(0), xDelay(0), yFreq(0), zTemp(0), intervalCalibration(0), intervalRollover(0), filExt(""), calExt(""), adjExt(""), rolExt(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
 
 	~LOOP_OBJECT()
 	{
@@ -414,6 +311,7 @@ public:
     int setupModbusPort_5();
     int setupModbusPort_6();
 
+	void updateCalibrationLcd(const double, const double, const double, const double);
 	void readData(const int, const bool);
     void updateLoopStatus(const int, const double, const double, const double);
 	void injectWater(const bool);
@@ -472,30 +370,10 @@ private slots:
     void onCalibrationButtonPressed(int);
     void onRtuPortActive(bool,int);
     void changeSerialPort(int);
-    void changeSerialPort_2(int);
-    void changeSerialPort_3(int);
-    void changeSerialPort_4(int);
-    void changeSerialPort_5(int);
-    void changeSerialPort_6(int);
 
-    void toggleLineView_L1P1(bool); 
-    void toggleLineView_L1P2(bool); 
-    void toggleLineView_L1P3(bool); 
-    void toggleLineView_L2P1(bool); 
-    void toggleLineView_L2P2(bool); 
-    void toggleLineView_L2P3(bool); 
-    void toggleLineView_L3P1(bool); 
-    void toggleLineView_L3P2(bool); 
-    void toggleLineView_L3P3(bool); 
-    void toggleLineView_L4P1(bool); 
-    void toggleLineView_L4P2(bool); 
-    void toggleLineView_L4P3(bool); 
-    void toggleLineView_L5P1(bool); 
-    void toggleLineView_L5P2(bool); 
-    void toggleLineView_L5P3(bool); 
-    void toggleLineView_L6P1(bool); 
-    void toggleLineView_L6P2(bool); 
-    void toggleLineView_L6P3(bool); 
+    void toggleLineView_P1(bool); 
+    void toggleLineView_P2(bool); 
+    void toggleLineView_P3(bool); 
 
     void onProductSelected(bool);
     void onModeChanged(bool);
@@ -514,6 +392,8 @@ private slots:
     void onZTemp(int);
     void onActionMainServer();
     void onActionLocalServer();
+    void onIntervalCalibration(const int);
+    void onIntervalRollover(const int);
 
     void createLoopFile(const int, const QString, const QString, const QString, const QString, const int);
     void initializeToolbarIcons(void);
@@ -582,35 +462,15 @@ private:
 	bool isModbusTransmissionFailed;
 
 	/// QFuture Calibration Thread
-	QFuture<void> future_L1P1;
-	QFuture<void> future_L1P2;
-	QFuture<void> future_L1P3;
-
-	QFuture<void> future_L2P1;
-	QFuture<void> future_L2P2;
-	QFuture<void> future_L2P3;
-
-	QFuture<void> future_L3P1;
-	QFuture<void> future_L3P2;
-	QFuture<void> future_L3P3;
-
-	QFuture<void> future_L4P1;
-	QFuture<void> future_L4P2;
-	QFuture<void> future_L4P3;
-
-	QFuture<void> future_L5P1;
-	QFuture<void> future_L5P2;
-	QFuture<void> future_L5P3;
-
-	QFuture<void> future_L6P1;
-	QFuture<void> future_L6P2;
-	QFuture<void> future_L6P3;
+	QFuture<void> future_P1;
+	QFuture<void> future_P2;
+	QFuture<void> future_P3;
 
 	/// loop objects
-	LOOPS LOOP[MAX_LOOP];
+	LOOPS LOOP[1];
 
 	/// pipe objects
-	PIPES PIPE [MAX_PIPE];
+	PIPES PIPE [3];
 };
 
 #endif // MAINWINDOW_H
