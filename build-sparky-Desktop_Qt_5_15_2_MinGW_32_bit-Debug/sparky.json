@@ -3,6 +3,7 @@
     "LOOP.InjectionTemp": "38",
     "LOOP.IntervalCalibration": "0.25",
     "LOOP.IntervalRollover": "1",
+    "LOOP.LoopNumber": "1",
     "LOOP.Mark": "100",
     "LOOP.MaxRefTemp": "55",
     "LOOP.Method": "201",

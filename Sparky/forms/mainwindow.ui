@@ -2800,45 +2800,40 @@
     </property>
     <widget class="QMenu" name="menuInjection">
      <property name="title">
-      <string>Loops</string>
+      <string>Loop</string>
      </property>
-     <widget class="QMenu" name="menuLoop_1">
+     <widget class="QMenu" name="menuStability">
       <property name="title">
-       <string>Loop</string>
+       <string>Delta Stability</string>
       </property>
-      <widget class="QMenu" name="menuStability">
-       <property name="title">
-        <string>De;lta Stability</string>
-       </property>
-       <addaction name="actionX_seconds"/>
-       <addaction name="actionY_KHz"/>
-       <addaction name="actionZ_C"/>
-      </widget>
-      <widget class="QMenu" name="menuMinimum_Reference_Temperature">
-       <property name="title">
-        <string>Reference Temperature</string>
-       </property>
-       <addaction name="actionMin_Ref_Temp"/>
-       <addaction name="actionMax_Ref_Temp"/>
-       <addaction name="actionInjection_Temp"/>
-      </widget>
-      <widget class="QMenu" name="menuInterval">
-       <property name="title">
-        <string>Interval</string>
-       </property>
-       <addaction name="actionCalibration"/>
-       <addaction name="actionRollover"/>
-      </widget>
-      <addaction name="actionInjection_Pump_Rates"/>
-      <addaction name="actionInjection_Bucket"/>
-      <addaction name="actionInjection_Mark"/>
-      <addaction name="actionInjection_Method"/>
-      <addaction name="actionPressure_Sensor_Slope"/>
-      <addaction name="menuMinimum_Reference_Temperature"/>
-      <addaction name="menuStability"/>
-      <addaction name="menuInterval"/>
+      <addaction name="actionX_seconds"/>
+      <addaction name="actionY_KHz"/>
+      <addaction name="actionZ_C"/>
      </widget>
-     <addaction name="menuLoop_1"/>
+     <widget class="QMenu" name="menuMinimum_Reference_Temperature">
+      <property name="title">
+       <string>Reference Temperature</string>
+      </property>
+      <addaction name="actionMin_Ref_Temp"/>
+      <addaction name="actionMax_Ref_Temp"/>
+      <addaction name="actionInjection_Temp"/>
+     </widget>
+     <widget class="QMenu" name="menuInterval">
+      <property name="title">
+       <string>Interval</string>
+      </property>
+      <addaction name="actionCalibration"/>
+      <addaction name="actionRollover"/>
+     </widget>
+     <addaction name="actionLOOP_NUMBER"/>
+     <addaction name="actionInjection_Pump_Rates"/>
+     <addaction name="actionInjection_Bucket"/>
+     <addaction name="actionInjection_Mark"/>
+     <addaction name="actionInjection_Method"/>
+     <addaction name="actionPressure_Sensor_Slope"/>
+     <addaction name="menuMinimum_Reference_Temperature"/>
+     <addaction name="menuStability"/>
+     <addaction name="menuInterval"/>
     </widget>
     <widget class="QMenu" name="menuFile_Folders">
      <property name="title">
@@ -3316,6 +3311,11 @@
   <action name="actionRollover">
    <property name="text">
     <string>Rollover</string>
+   </property>
+  </action>
+  <action name="actionLOOP_NUMBER">
+   <property name="text">
+    <string>Loop Number</string>
    </property>
   </action>
  </widget>

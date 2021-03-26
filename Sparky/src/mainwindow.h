@@ -30,6 +30,11 @@
 #define STABILITY_CHECK				true
 #define NO_STABILITY_CHECK			false
 
+/// pipe cal status
+#define DONE						0
+#define ENABLED						1	
+#define DISABLED					2		
+
 /// control box
 #define CONTROLBOX                  100 
 
@@ -87,6 +92,7 @@
 #define LOOP_Z_TEMP                   "LOOP.ZTemp"
 #define LOOP_INTERVAL_CALIBRATION     "LOOP.IntervalCalibration"
 #define LOOP_INTERVAL_ROLLOVER  	  "LOOP.IntervalRollover"
+#define LOOP_NUMBER  	  			  "LOOP.LoopNumber"
 
 #define FILE_LIST                   "Filelist.LST"
 
@@ -154,8 +160,8 @@ typedef struct PIPE_OBJECT
     int osc;
     int tempStability;
     int freqStability;
+	int isCal;
     QString calFile;
-	bool isCal;
     QString mainDirPath;
     QString localDirPath;
     QString pipeId;
@@ -179,12 +185,11 @@ typedef struct PIPE_OBJECT
     double frequency;
     double frequency_prev;
     double frequency_start;
-    double watercut;
     double oilrp;
     double measai;
     double trimai;
 
-	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), calFile(""), isCal(false), mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber), temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), frequency_start(0), watercut(0), oilrp(0), measai(0), trimai(0) {}
+	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), isCal(0), calFile(""),  mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber), temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), frequency_start(0), oilrp(0), measai(0), trimai(0) {}
 
     //This is the destructor.  Will delete the array of vertices, if present.
     ~PIPE_OBJECT()
@@ -208,7 +213,12 @@ typedef struct LOOP_OBJECT
 {
     bool isCal;
 	bool isEEA;
+	bool isInitialAMB;
+	bool isInitialMinRef;
+	bool isInitialMaxRef;
+	bool isInitialCal;
 	QString mode;
+    double watercut;
 	double injectionOilPumpRate;
     double injectionWaterPumpRate;
     double injectionSmallWaterPumpRate;
@@ -220,6 +230,7 @@ typedef struct LOOP_OBJECT
     int maxRefTemp;
     int injectionTemp;
     int xDelay;
+	int loopNumber;
     double yFreq;
     double zTemp;
 	double intervalCalibration;
@@ -259,7 +270,7 @@ typedef struct LOOP_OBJECT
     QValueAxis * axisY;
     QValueAxis * axisY3;
 
-	LOOP_OBJECT() : isCal(false), isEEA(0), mode(""), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), injectionTemp(0), xDelay(0), yFreq(0), zTemp(0), intervalCalibration(0), intervalRollover(0), filExt(""), calExt(""), adjExt(""), rolExt(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
+	LOOP_OBJECT() : isCal(false), isEEA(0), isInitialAMB(1), isInitialMinRef(1), isInitialMaxRef(1), isInitialCal(1), mode(""), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), injectionTemp(0), xDelay(0), loopNumber(0), yFreq(0), zTemp(0), intervalCalibration(0), intervalRollover(0), filExt(""), calExt(""), adjExt(""), rolExt(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
 
 	~LOOP_OBJECT()
 	{
@@ -297,12 +308,12 @@ public:
     ~MainWindow();
 
     void delay(int);
-    modbus_t*  modbus() { return LOOP[0].serialModbus; }
-    modbus_t*  modbus_2() { return LOOP[1].serialModbus; }
-    modbus_t*  modbus_3() { return LOOP[2].serialModbus; }
-    modbus_t*  modbus_4() { return LOOP[3].serialModbus; }
-    modbus_t*  modbus_5() { return LOOP[4].serialModbus; }
-    modbus_t*  modbus_6() { return LOOP[5].serialModbus; }
+    modbus_t*  modbus() { return LOOP.serialModbus; }
+    modbus_t*  modbus_2() { return LOOP.serialModbus; }
+    modbus_t*  modbus_3() { return LOOP.serialModbus; }
+    modbus_t*  modbus_4() { return LOOP.serialModbus; }
+    modbus_t*  modbus_5() { return LOOP.serialModbus; }
+    modbus_t*  modbus_6() { return LOOP.serialModbus; }
 
     int setupModbusPort();
     int setupModbusPort_2();
@@ -320,14 +331,14 @@ public:
     void prepareForNextFile(const int, const QString);
     void writeToCalFile(int, QString);
     void closeCalibrationFile(int, int, double);
-    void changeModbusInterface(const QString &port, char parity, const int);
-    void releaseSerialModbus(const int);
+    void changeModbusInterface(const QString &port, char parity);
+    void releaseSerialModbus();
 	void setValidators();
     void initializeGraph();
     void initializePipeObjects();
     void initializeLoopObjects();
     void setInputValidator(void);
-    bool validateSerialNumber(const int, modbus_t *);   
+    bool validateSerialNumber(modbus_t *);   
     void updatePipeReading(const int, const double, const double, const double, const double, const double); 
     bool getUserInputMessage(const QString, const QString, const QString);
     void displayMessage(const QString, const QString, const QString);
@@ -351,7 +362,7 @@ public:
     void connectProductBtnPressed();
     void setupModbusPorts();
     void updateLoopTabIcon(const int, const bool);
-    void updateStartButtonLabel(const int);
+    void updateStartButtonLabel();
     bool prepareCalibration(const int);
     void initializeTabIcons();
     float toFloat(QByteArray arr);
@@ -363,10 +374,10 @@ public:
 
 private slots:
 
-    void calibrate(const int);
+    void calibrate();
+    void stopCalibration();
 	void updateFileList(const QString, const int, const QString, const int);
 	void createCalibrateFile(const int, const int, const QString, const QString, const QString, const QString);
-    void stopCalibration(int);
     void onCalibrationButtonPressed(int);
     void onRtuPortActive(bool,int);
     void changeSerialPort(int);
@@ -394,6 +405,7 @@ private slots:
     void onActionLocalServer();
     void onIntervalCalibration(const int);
     void onIntervalRollover(const int);
+    void onLoopNumber(const int);
 
     void createLoopFile(const int, const QString, const QString, const QString, const QString, const int);
     void initializeToolbarIcons(void);
@@ -467,7 +479,7 @@ private:
 	QFuture<void> future_P3;
 
 	/// loop objects
-	LOOPS LOOP[1];
+	LOOPS LOOP;
 
 	/// pipe objects
 	PIPES PIPE [3];
