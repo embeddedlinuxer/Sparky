@@ -175,8 +175,10 @@ compiler_moc_header_make_all: debug/moc_mainwindow.cpp debug/moc_BatchProcessor.
 compiler_moc_header_clean:
 	-$(DEL_FILE) debug\moc_mainwindow.cpp debug\moc_BatchProcessor.cpp debug\moc_qextserialport.cpp debug\moc_qextserialenumerator.cpp debug\moc_qcgaugewidget.cpp
 debug/moc_mainwindow.cpp: ../Sparky/src/mainwindow.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/QFuture \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qfuture.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QGroupBox \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qgroupbox.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qtwidgetsglobal.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtGui/qtguiglobal.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qglobal.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qconfig-bootstrapped.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qconfig.h \
@@ -198,25 +200,29 @@ debug/moc_mainwindow.cpp: ../Sparky/src/mainwindow.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qmutex.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qnumeric.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qversiontagging.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qfutureinterface.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qrunnable.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qexception.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qshareddata.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qhash.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtGui/qtgui-config.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qtwidgets-config.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qframe.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qwidget.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtGui/qwindowdefs.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobjectdefs.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qnamespace.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobjectdefs_impl.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtGui/qwindowdefs_win.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobject.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstring.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qchar.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qiterator.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qlist.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qalgorithms.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qbytearray.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qrefcount.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qarraydata.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qhashfunctions.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstring.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qbytearray.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qnamespace.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringliteral.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringalgorithms.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringview.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringbuilder.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qlist.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qalgorithms.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qiterator.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qhashfunctions.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qpair.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qvector.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qcontainertools_impl.h \
@@ -225,36 +231,12 @@ debug/moc_mainwindow.cpp: ../Sparky/src/mainwindow.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringlist.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qregexp.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringmatcher.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qresultstore.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qmap.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qdebug.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qtextstream.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qiodevice.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobject.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobjectdefs.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobjectdefs_impl.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qcoreevent.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qscopedpointer.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qmetatype.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qvarlengtharray.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qcontainerfwd.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobject_impl.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qlocale.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qvariant.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qset.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qcontiguouscache.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qsharedpointer.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qsharedpointer_impl.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QLineEdit \
-		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qlineedit.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qtwidgetsglobal.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtGui/qtguiglobal.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtGui/qtgui-config.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qtwidgets-config.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qframe.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qwidget.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtGui/qwindowdefs.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtGui/qwindowdefs_win.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qmargins.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qpaintdevice.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qrect.h \
@@ -268,11 +250,16 @@ debug/moc_mainwindow.cpp: ../Sparky/src/mainwindow.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qpolygon.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qregion.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qdatastream.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qiodevice.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qline.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qtransform.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qimage.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qpixelformat.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qpixmap.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qsharedpointer.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qshareddata.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qhash.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qsharedpointer_impl.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qfont.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qfontmetrics.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qfontinfo.h \
@@ -280,12 +267,29 @@ debug/moc_mainwindow.cpp: ../Sparky/src/mainwindow.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qcursor.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qkeysequence.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qevent.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qvariant.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qmap.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qdebug.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qtextstream.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qlocale.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qset.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qcontiguouscache.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qurl.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qurlquery.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qfile.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qfiledevice.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qvector2d.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qtouchdevice.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QProgressBar \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qprogressbar.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/QFuture \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qfuture.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qfutureinterface.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qrunnable.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qexception.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qresultstore.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QLineEdit \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qlineedit.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qtextcursor.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qtextformat.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qpen.h \
@@ -940,6 +944,11 @@ debug/main.o: ../Sparky/src/main.cpp ../../../Qt/5.15.2/mingw81_32/include/QtWid
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qguiapplication.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qinputmethod.h \
 		../Sparky/src/mainwindow.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QGroupBox \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qgroupbox.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qframe.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QProgressBar \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qprogressbar.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/QFuture \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qfuture.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qfutureinterface.h \
@@ -948,7 +957,6 @@ debug/main.o: ../Sparky/src/main.cpp ../../../Qt/5.15.2/mingw81_32/include/QtWid
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qresultstore.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QLineEdit \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qlineedit.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qframe.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qtextcursor.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qtextformat.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtGui/qpen.h \
@@ -1415,6 +1423,9 @@ debug/mainwindow.o: ../Sparky/src/mainwindow.cpp ../../../Qt/5.15.2/mingw81_32/i
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qscrollbar.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qabstractslider.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/QTime \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QGroupBox \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qgroupbox.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qframe.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QFileDialog \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qfiledialog.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/QThread \
@@ -1424,7 +1435,6 @@ debug/mainwindow.o: ../Sparky/src/mainwindow.cpp ../../../Qt/5.15.2/mingw81_32/i
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qlistview.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qabstractitemview.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qabstractscrollarea.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qframe.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qabstractitemdelegate.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qstyleoption.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qabstractspinbox.h \
@@ -1447,6 +1457,8 @@ debug/mainwindow.o: ../Sparky/src/mainwindow.cpp ../../../Qt/5.15.2/mingw81_32/i
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QProgressDialog \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qprogressdialog.h \
 		../Sparky/src/mainwindow.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QProgressBar \
+		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/qprogressbar.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/QFuture \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QLineEdit \
 		../../../Qt/5.15.2/mingw81_32/include/QtWidgets/QComboBox \

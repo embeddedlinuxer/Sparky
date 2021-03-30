@@ -1,6 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QGroupBox>
+#include <QProgressBar>
 #include <QFuture>
 #include <QLineEdit>
 #include <QComboBox>
@@ -30,13 +32,20 @@
 #define STABILITY_CHECK				true
 #define NO_STABILITY_CHECK			false
 
+/// injection material
+#define WATER						0
+#define OIL							1
+
+/// sub system	
+#define CONTROLBOX                  100 
+#define MASTERPIPE					101
+#define COIL_OIL_PUMP				60
+#define COIL_WATER_PUMP				61
+
 /// pipe cal status
 #define DONE						0
 #define ENABLED						1	
 #define DISABLED					2		
-
-/// control box
-#define CONTROLBOX                  100 
 
 /// master pipe
 #define MASTER_WATERCUT             3
@@ -93,6 +102,12 @@
 #define LOOP_INTERVAL_CALIBRATION     "LOOP.IntervalCalibration"
 #define LOOP_INTERVAL_ROLLOVER  	  "LOOP.IntervalRollover"
 #define LOOP_NUMBER  	  			  "LOOP.LoopNumber"
+#define LOOP_MASTER_MIN  			  "LOOP.MasterMin"
+#define LOOP_MASTER_MAX  			  "LOOP.MasterMax"
+#define LOOP_MASTER_DELTA  			  "LOOP.MasterDelta"
+#define LOOP_MASTER_DELTA_FINAL		  "LOOP.MasterDeltaFinal"
+#define LOOP_MAX_INJECTION_WATER   	  "LOOP.MaxInjectionWater"
+#define LOOP_MAX_INJECTION_OIL   	  "LOOP.MaxInjectionOil"
 
 #define FILE_LIST                   "Filelist.LST"
 
@@ -160,8 +175,9 @@ typedef struct PIPE_OBJECT
     int osc;
     int tempStability;
     int freqStability;
-	int isCal;
-    QString calFile;
+	int status;
+	int rolloverTracker;
+	QString calFile;
     QString mainDirPath;
     QString localDirPath;
     QString pipeId;
@@ -179,6 +195,8 @@ typedef struct PIPE_OBJECT
     QLCDNumber * lcdFreq;
     QLCDNumber * lcdTemp;
     QLCDNumber * lcdReflectedPower;
+	QProgressBar * freqProgress;
+	QProgressBar * tempProgress;
 
 	double temperature;
     double temperature_prev;
@@ -189,7 +207,7 @@ typedef struct PIPE_OBJECT
     double measai;
     double trimai;
 
-	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), isCal(0), calFile(""),  mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber), temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), frequency_start(0), oilrp(0), measai(0), trimai(0) {}
+	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), status(ENABLED), rolloverTracker(0), calFile(""),  mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber), freqProgress(new QProgressBar), tempProgress(new QProgressBar),temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), frequency_start(0), oilrp(0), measai(0), trimai(0) {}
 
     //This is the destructor.  Will delete the array of vertices, if present.
     ~PIPE_OBJECT()
@@ -211,6 +229,7 @@ typedef struct PIPE_OBJECT
 
 typedef struct LOOP_OBJECT 
 {
+	bool isMaster;
     bool isCal;
 	bool isEEA;
 	bool isInitialAMB;
@@ -218,6 +237,10 @@ typedef struct LOOP_OBJECT
 	bool isInitialMaxRef;
 	bool isInitialCal;
 	QString mode;
+	double masterMin;
+	double masterMax;
+	double masterDelta;
+	double masterDeltaFinal;
     double watercut;
 	double injectionOilPumpRate;
     double injectionWaterPumpRate;
@@ -231,6 +254,8 @@ typedef struct LOOP_OBJECT
     int injectionTemp;
     int xDelay;
 	int loopNumber;
+	int maxInjectionWater;
+	int maxInjectionOil;
     double yFreq;
     double zTemp;
 	double intervalCalibration;
@@ -249,7 +274,10 @@ typedef struct LOOP_OBJECT
     int ID_WATER_ADJUST;
     int ID_FREQ;
     int ID_OIL_RP;
-
+    int ID_MASTER_WATERCUT;
+    int ID_MASTER_SALINITY;
+    int ID_MASTER_OIL_ADJUST;
+	
     QLineEdit * loopVolume;
 	QComboBox * saltStart;
 	QComboBox * saltStop;
@@ -270,7 +298,7 @@ typedef struct LOOP_OBJECT
     QValueAxis * axisY;
     QValueAxis * axisY3;
 
-	LOOP_OBJECT() : isCal(false), isEEA(0), isInitialAMB(1), isInitialMinRef(1), isInitialMaxRef(1), isInitialCal(1), mode(""), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), injectionTemp(0), xDelay(0), loopNumber(0), yFreq(0), zTemp(0), intervalCalibration(0), intervalRollover(0), filExt(""), calExt(""), adjExt(""), rolExt(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
+	LOOP_OBJECT() : isMaster(false), isCal(false), isEEA(0), isInitialAMB(1), isInitialMinRef(1), isInitialMaxRef(1), isInitialCal(1), mode(""), masterMin(0), masterMax(0),masterDelta(0), masterDeltaFinal(0), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), injectionTemp(0), xDelay(0), loopNumber(0), maxInjectionWater(80), maxInjectionOil(200), yFreq(0), zTemp(0), intervalCalibration(0), intervalRollover(0), filExt(""), calExt(""), adjExt(""), rolExt(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), ID_MASTER_WATERCUT(0), ID_MASTER_SALINITY(0), ID_MASTER_OIL_ADJUST(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
 
 	~LOOP_OBJECT()
 	{
@@ -322,11 +350,12 @@ public:
     int setupModbusPort_5();
     int setupModbusPort_6();
 
+	void readMasterPipe();
 	void updateCalibrationLcd(const double, const double, const double, const double);
 	void readData(const int, const bool);
     void updateLoopStatus(const int, const double, const double, const double);
-	void injectWater(const bool);
-	void setProductAndCalibrationMode(const int);
+	void inject(const int, const bool);
+	void setProductAndCalibrationMode();
     void masterPipe(int, QString, bool);
     void prepareForNextFile(const int, const QString);
     void writeToCalFile(int, QString);
@@ -339,9 +368,9 @@ public:
     void initializeLoopObjects();
     void setInputValidator(void);
     bool validateSerialNumber(modbus_t *);   
-    void updatePipeReading(const int, const double, const double, const double, const double, const double); 
+    void updatePipeStatus(const int, const double, const double, const double, const double, const double); 
     bool getUserInputMessage(const QString, const QString, const QString);
-    void displayMessage(const QString, const QString, const QString);
+    bool displayMessage(const QString, const QString, const QString);
     void busMonitorAddItem( bool isRequest,uint16_t slave,uint8_t func,uint16_t addr,uint16_t nb,uint16_t expectedCRC,uint16_t actualCRC );
     static void stBusMonitorAddItem( modbus_t * modbus,uint8_t isOut, uint16_t slave, uint8_t func, uint16_t addr,uint16_t nb, uint16_t expectedCRC, uint16_t actualCRC );
     static void stBusMonitorRawData( modbus_t * modbus, uint8_t * data,uint8_t dataLen, uint8_t addNewline );
@@ -352,7 +381,6 @@ public:
     void connectModbusMonitor();
     void connectTimers();
     void connectRegisters();
-    void connectLoopDependentData();
     void connectCalibrationControls();
     void connectProfiler();
     void connectToolbar();
@@ -360,10 +388,11 @@ public:
     void connectLineView();
     void connectReturnPressed();
     void connectProductBtnPressed();
+	void connectMasterPipe();
     void setupModbusPorts();
-    void updateLoopTabIcon(const int, const bool);
+    void updateLoopTabIcon(const bool);
     void updateStartButtonLabel();
-    bool prepareCalibration(const int);
+    bool prepareCalibration();
     void initializeTabIcons();
     float toFloat(QByteArray arr);
     void initializeModbusMonitor();
@@ -374,42 +403,47 @@ public:
 
 private slots:
 
+	void onMasterPipeToggled(const bool);
     void calibrate();
     void stopCalibration();
-	void updateFileList(const QString, const int, const QString, const int);
+	void updateFileList(const QString, const int, const int);
 	void createCalibrateFile(const int, const int, const QString, const QString, const QString, const QString);
-    void onCalibrationButtonPressed(int);
-    void onRtuPortActive(bool,int);
+    void onCalibrationButtonPressed();
+    void onRtuPortActive(bool);
     void changeSerialPort(int);
 
     void toggleLineView_P1(bool); 
     void toggleLineView_P2(bool); 
     void toggleLineView_P3(bool); 
 
-    void onProductSelected(bool);
     void onModeChanged(bool);
 
     /// config menu
-    void injectionPumpRates(int);
-    void injectionBucket(int);
-    void injectionMark(int);
-    void injectionMethod(int);
-    void onActionPressureSensorSlope(int);
-	void onMinRefTemp(int);
-	void onMaxRefTemp(int);
-	void onInjectionTemp(int);
-    void onXDelay(int);
-    void onYFreq(int);
-    void onZTemp(int);
+    void injectionPumpRates();
+    void injectionBucket();
+    void injectionMark();
+    void injectionMethod();
+    void onActionPressureSensorSlope();
+	void onMinRefTemp();
+	void onMaxRefTemp();
+	void onInjectionTemp();
+    void onXDelay();
+    void onYFreq();
+    void onZTemp();
     void onActionMainServer();
     void onActionLocalServer();
-    void onIntervalCalibration(const int);
-    void onIntervalRollover(const int);
-    void onLoopNumber(const int);
+    void onIntervalCalibration();
+    void onIntervalRollover();
+    void onLoopNumber();
+	void onActionMinMaster();
+	void onActionMaxMaster();
+	void onActionDeltaMaster();
+	void onActionDeltaMasterFinal();
+	void onActionWater();
+	void onActionOil();
 
-    void createLoopFile(const int, const QString, const QString, const QString, const QString, const int);
+    void createLoopFile(const int, const QString, const QString, const QString, const int);
     void initializeToolbarIcons(void);
-    void onLoopTabChanged(int);
     void clearMonitors( void );
     void updateRequestPreview( void );
     void updateRegisterView( void );
@@ -432,14 +466,14 @@ private slots:
     void loadCsvTemplate();
     void onUploadEquation();
     void onDownloadEquation();
-    void updateRegisters(const bool, const int);
+    void onUpdateRegisters(const bool);
     void onDownloadButtonChecked(bool);
     void saveCsvFile();
     void onEquationTableChecked(bool);
     void onUnlockFactoryDefaultBtnPressed();
     void onLockFactoryDefaultBtnPressed();
     void onUpdateFactoryDefaultPressed();
-    void updateStability(const bool, const int, const int);
+    void updatePipeStability(const bool, const int, const int);
     void readJsonConfigFile();
     void writeJsonConfigFile();
 

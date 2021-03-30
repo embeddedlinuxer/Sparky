@@ -2825,12 +2825,20 @@
       <addaction name="actionCalibration"/>
       <addaction name="actionRollover"/>
      </widget>
+     <widget class="QMenu" name="menuMax_Injection_Time">
+      <property name="title">
+       <string>Max Injection Time</string>
+      </property>
+      <addaction name="actionWater"/>
+      <addaction name="actionOil"/>
+     </widget>
      <addaction name="actionLOOP_NUMBER"/>
      <addaction name="actionInjection_Pump_Rates"/>
      <addaction name="actionInjection_Bucket"/>
      <addaction name="actionInjection_Mark"/>
      <addaction name="actionInjection_Method"/>
      <addaction name="actionPressure_Sensor_Slope"/>
+     <addaction name="menuMax_Injection_Time"/>
      <addaction name="menuMinimum_Reference_Temperature"/>
      <addaction name="menuStability"/>
      <addaction name="menuInterval"/>
@@ -2842,7 +2850,17 @@
      <addaction name="actionMain_Server"/>
      <addaction name="actionLocal_Server"/>
     </widget>
+    <widget class="QMenu" name="menuMaster">
+     <property name="title">
+      <string>Master</string>
+     </property>
+     <addaction name="actionMin_Watercut"/>
+     <addaction name="actionMax_Watercut"/>
+     <addaction name="actionDelta_Master"/>
+     <addaction name="actionFinal_Delta_Watercut"/>
+    </widget>
     <addaction name="menuInjection"/>
+    <addaction name="menuMaster"/>
     <addaction name="menuFile_Folders"/>
    </widget>
    <addaction name="menuFile"/>
@@ -3316,6 +3334,36 @@
   <action name="actionLOOP_NUMBER">
    <property name="text">
     <string>Loop Number</string>
+   </property>
+  </action>
+  <action name="actionMin_Watercut">
+   <property name="text">
+    <string>Min Initial Watercut</string>
+   </property>
+  </action>
+  <action name="actionMax_Watercut">
+   <property name="text">
+    <string>Max Initial Watercut</string>
+   </property>
+  </action>
+  <action name="actionDelta_Master">
+   <property name="text">
+    <string>Initial Delta Watercut </string>
+   </property>
+  </action>
+  <action name="actionWater">
+   <property name="text">
+    <string>Water</string>
+   </property>
+  </action>
+  <action name="actionOil">
+   <property name="text">
+    <string>Oil</string>
+   </property>
+  </action>
+  <action name="actionFinal_Delta_Watercut">
+   <property name="text">
+    <string>Final Delta Watercut</string>
    </property>
   </action>
  </widget>
