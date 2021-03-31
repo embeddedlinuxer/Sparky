@@ -2947,12 +2947,15 @@ calibrate()
 					injectionTime = 0;
 					totalInjectionTime = 0;
 					accumulatedInjectionTime_prev = 0;
+               		bool ok;
+
+					/// enter operator's name
+               		LOOP.operatorName = QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Operator's Name")), QLineEdit::Normal,"0.0", &ok);
 
 					/// master pipe on
        				if (LOOP.isMaster) displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("MASTER PIPE ")+QString::number(LOOP.loopNumber)," Verify that the small water injection pump is connected.");
 
                		/// indicate the operator to enter measured initial watercut 
-               		bool ok;
                		LOOP.waterRunStop->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Measured Initial Watercut")), QLineEdit::Normal,"0.0", &ok));
 
 					/// master pipe - check sanity
@@ -3100,7 +3103,10 @@ calibrate()
 						if (PIPE[pipe].status == ENABLED) 
 						{
 							PIPE[pipe].status = DONE; /// a pipe stops if it reaches stability
-                    		prepareForNextFile(pipe,"CALIBRAT.LCI");
+                    		if (LOOP.mode == LOW)  prepareForNextFile(pipe,"CALIBRAT.LCI");
+                    		else if (LOOP.mode == MID)  prepareForNextFile(pipe,QString("OIL__").append(LOOP.injectionTemp).append(".MCI"));
+                    		else if (LOOP.mode == HIGH)  prepareForNextFile(pipe,QString("OIL__").append(LOOP.injectionTemp).append(".HCI"));
+                    		else if (LOOP.mode == FULL)  prepareForNextFile(pipe,QString("OIL__").append(LOOP.injectionTemp).append(".FCI"));
 							readData(pipe, STABILITY_CHECK);
 							PIPE[pipe].frequency_start = PIPE[pipe].frequency;
 						}
@@ -3640,7 +3646,7 @@ onUpdateRegisters(const bool isEEA)
     if (isEEA)
     {
         LOOP.ID_SN_PIPE = 1;
-        LOOP.ID_WATERCUT = 15; // register id
+        LOOP.ID_WATERCUT = 15;
         LOOP.ID_TEMPERATURE = 5;
         LOOP.ID_SALINITY = 21;
         LOOP.ID_OIL_ADJUST = 23;
@@ -3653,7 +3659,7 @@ onUpdateRegisters(const bool isEEA)
     else
     {
         LOOP.ID_SN_PIPE = 201;
-        LOOP.ID_WATERCUT = 3; // register id
+        LOOP.ID_WATERCUT = 3;
         LOOP.ID_TEMPERATURE = 5;
         LOOP.ID_SALINITY = 9;
         LOOP.ID_OIL_ADJUST = 15;
