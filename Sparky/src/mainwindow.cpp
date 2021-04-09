@@ -2344,7 +2344,7 @@ createInjectionFile(const int sn, const int pipe, const QString startValue, cons
     QString header0;
     LOOP.isEEA ? header0 = EEA_INJECTION_FILE : header0 = RAZ_INJECTION_FILE;
     QString header1("SN"+QString::number(sn)+" | "+LOOP.mode.split("\\").at(1) +" | "+currentDataTime.toString()+" | L"+QString::number(LOOP.loopNumber)+PIPE[pipe].pipeId+" | "+PROJECT+RELEASE_VERSION); 
-    QString header2("INJECTION:  "+startValue+" % "+"to "+stopValue+" % "+"Watercut at "+saltValue+" % "+"Salinity\n");
+    QString header2("INJECTION:  "+startValue+" % "+"to "+stopValue+" % "+"Watercut at "+"1 % "+"Salinity\n");
     QString header3 = HEADER3;
     QString header4 = HEADER4;
     QString header5 = HEADER5;
@@ -2414,7 +2414,7 @@ createInjectionFile(const int sn, const int pipe, const QString startValue, cons
        	{
            	QTextStream stream(&PIPE[pipe].file);
            	PIPE[pipe].file.open(QIODevice::WriteOnly | QIODevice::Text);
-           	stream << header0 << '\n' << header1 << '\n' << header22 << '\n' << header3 << '\n' << header4 << '\n' << header5 << '\n';
+           	stream << header0 << '\n' << header1 << '\n' << header2 << '\n' << header3 << '\n' << header4 << '\n' << header5 << '\n';
            	PIPE[pipe].file.close();
 		
 			/// update file list	
@@ -3274,7 +3274,7 @@ runInjection()
 
 			for (int pipe=0; pipe<3; pipe++)
 			{
-				if ((PIPE[pipe].status == ENABLED) && (!QFileInfo(PIPE[pipe].file).exists()))
+				if ((PIPE[pipe].status == ENABLED) && (QFileInfo(PIPE[pipe].file).exists()))
 				{
 					QTextStream stream(&PIPE[pipe].file);
    					PIPE[pipe].file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
