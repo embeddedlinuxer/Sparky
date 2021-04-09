@@ -5,5 +5,5 @@
     <Title>Phase Dynamics Inc</Title>
     <Publisher>Phase Dynamics</Publisher>
     <StartMenuDir>Super App</StartMenuDir>
-    <TargetDir>@HomeDir@/Phase Dynamics</TargetDir>
+    <TargetDir>@HomeDir@/Phase Dynamics/Sparky</TargetDir>
 </Installer>

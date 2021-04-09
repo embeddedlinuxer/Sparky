@@ -6,7 +6,6 @@ QT += gui widgets charts concurrent
 
 SOURCES += src/main.cpp \
     src/mainwindow.cpp \
-    src/BatchProcessor.cpp \
     3rdparty/qextserialport/qextserialport.cpp	\
     3rdparty/libmodbus/src/modbus.c \
     3rdparty/libmodbus/src/modbus-data.c \

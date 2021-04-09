@@ -1,10 +1,10 @@
 
 TOP                 = G:\tools\sparky
-INSTALL_TOP         = G:\Qt\tools\QtInstallerFramework\3.2\bin
+INSTALL_TOP         = G:\Qt\tools\QtInstallerFramework\4.0\bin
 BINARYCREATOR       = $(INSTALL_TOP)\binarycreator.exe
 SETUP               = $(TOP)\install\setup.exe
 INSTALL_DATA        = $(TOP)\install\packages\com.pdi.product\data
-RELEASE             = $(TOP)\build-sparky-Desktop_Qt_5_14_2_MinGW_32_bit-Release\release
+RELEASE             = $(TOP)\build-sparky-Desktop_Qt_5_15_2_MinGW_32_bit-Release\release
 APP                 = $(RELEASE)\Sparky.exe
 CONFIG              = $(TOP)\install\config\config.xml
 PACKAGES            = $(TOP)\install\packages

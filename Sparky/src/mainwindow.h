@@ -32,13 +32,12 @@
 #define STABILITY_CHECK				true
 #define NO_STABILITY_CHECK			false
 
-/// injection material
-#define WATER						0
-#define OIL							1
-
 /// sub system	
-#define CONTROLBOX                  100 
-#define MASTERPIPE					101
+#define CONTROLBOX_SLAVE 	        100
+#define MODBUS_TIMER_SLAVE 			101
+#define OIL_MICROMOTION_SLAVE 	 	102
+#define WATER_MICROMOTION_SLAVE  	103
+
 #define COIL_OIL_PUMP				60
 #define COIL_WATER_PUMP				61
 
@@ -99,8 +98,8 @@
 #define LOOP_X_DELAY                  "LOOP.XDelay"
 #define LOOP_Y_FREQ                   "LOOP.YFreq"
 #define LOOP_Z_TEMP                   "LOOP.ZTemp"
-#define LOOP_INTERVAL_CALIBRATION     "LOOP.IntervalCalibration"
-#define LOOP_INTERVAL_ROLLOVER  	  "LOOP.IntervalRollover"
+#define LOOP_INTERVAL_SMALL_PUMP      "LOOP.IntervalSmallPump"
+#define LOOP_INTERVAL_BIG_PUMP  	  "LOOP.IntervalBigPump"
 #define LOOP_NUMBER  	  			  "LOOP.LoopNumber"
 #define LOOP_MASTER_MIN  			  "LOOP.MasterMin"
 #define LOOP_MASTER_MAX  			  "LOOP.MasterMax"
@@ -222,6 +221,8 @@ typedef struct PIPE_OBJECT
         if (lcdFreq) delete lcdFreq;
         if (lcdTemp) delete lcdTemp;
         if (lcdReflectedPower) delete lcdReflectedPower;
+		if (freqProgress) delete freqProgress;
+		if (tempProgress) delete tempProgress;
     }
 
 } PIPES;
@@ -232,10 +233,10 @@ typedef struct LOOP_OBJECT
 	bool isMaster;
     bool isCal;
 	bool isEEA;
-	bool isInitialAMB;
-	bool isInitialMinRef;
-	bool isInitialMaxRef;
-	bool isInitialCal;
+	bool isAMB;
+	bool isMinRef;
+	bool isMaxRef;
+	bool isInjection;
 	QString mode;
 	double masterMin;
 	double masterMax;
@@ -249,16 +250,17 @@ typedef struct LOOP_OBJECT
     double injectionMark;
     double injectionMethod;
     double pressureSensorSlope;
-    int minRefTemp;
-    int maxRefTemp;
-    int injectionTemp;
+    double minRefTemp;
+    double maxRefTemp;
+    double injectionTemp;
     int xDelay;
 	int loopNumber;
 	int maxInjectionWater;
 	int maxInjectionOil;
     double yFreq;
     double zTemp;
-	double intervalCalibration;
+	double intervalBigPump;
+	double intervalSmallPump;
 	double intervalRollover;
 	QString filExt;
 	QString calExt;
@@ -278,6 +280,9 @@ typedef struct LOOP_OBJECT
     int ID_MASTER_WATERCUT;
     int ID_MASTER_SALINITY;
     int ID_MASTER_OIL_ADJUST;
+    int ID_MASTER_OIL_RP;
+    int ID_MASTER_TEMPERATURE;
+    int ID_MASTER_FREQ;
 	
     QLineEdit * loopVolume;
 	QComboBox * saltStart;
@@ -287,9 +292,12 @@ typedef struct LOOP_OBJECT
 	QLineEdit * waterRunStop;
 	QLineEdit * oilRunStart;
 	QLineEdit * oilRunStop;
-	QLCDNumber * masterWatercut;
-	QLCDNumber * masterSalinity;
-	QLCDNumber * masterOilAdj;
+	double masterWatercut;
+	double masterSalinity;
+	double masterOilAdj;
+	double masterOilRp;
+	double masterFreq;
+	double masterTemp;
 
 	modbus_t * modbus;
     modbus_t * serialModbus;
@@ -299,7 +307,7 @@ typedef struct LOOP_OBJECT
     QValueAxis * axisY;
     QValueAxis * axisY3;
 
-	LOOP_OBJECT() : isMaster(false), isCal(false), isEEA(0), isInitialAMB(1), isInitialMinRef(1), isInitialMaxRef(1), isInitialCal(1), mode(""), masterMin(0), masterMax(0),masterDelta(0), masterDeltaFinal(0), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), injectionTemp(0), xDelay(0), loopNumber(0), maxInjectionWater(80), maxInjectionOil(200), yFreq(0), zTemp(0), intervalCalibration(0), intervalRollover(0), filExt(""), calExt(""), adjExt(""), rolExt(""), operatorName(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), ID_MASTER_WATERCUT(0), ID_MASTER_SALINITY(0), ID_MASTER_OIL_ADJUST(0), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(new QLCDNumber), masterSalinity(new QLCDNumber), masterOilAdj(new QLCDNumber), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
+	LOOP_OBJECT() : isMaster(false), isCal(false), isEEA(0), isAMB(1), isMinRef(1), isMaxRef(1), isInjection(1), mode(""), masterMin(0), masterMax(0),masterDelta(0), masterDeltaFinal(0), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), injectionTemp(0), xDelay(0), loopNumber(0), maxInjectionWater(80), maxInjectionOil(200), yFreq(0), zTemp(0), intervalBigPump(1), intervalSmallPump(0.25), filExt(""), calExt(""), adjExt(""), rolExt(""), operatorName(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), ID_MASTER_WATERCUT(15), ID_MASTER_SALINITY(21), ID_MASTER_OIL_ADJUST(23), ID_MASTER_OIL_RP(115), ID_MASTER_FREQ(111), ID_MASTER_TEMPERATURE(5), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(0), masterSalinity(0), masterOilAdj(0), masterOilRp(0), masterFreq(0), masterTemp(0), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY3(new QValueAxis) {};
 
 	~LOOP_OBJECT()
 	{
@@ -316,9 +324,6 @@ typedef struct LOOP_OBJECT
         if (waterRunStop) delete waterRunStop;
         if (oilRunStart) delete oilRunStart;
         if (oilRunStop) delete oilRunStop;
-        if (masterWatercut) delete masterWatercut;
-        if (masterSalinity) delete masterSalinity;
-        if (masterOilAdj) delete masterOilAdj;
 	}
     
 } LOOPS;
@@ -351,10 +356,10 @@ public:
     int setupModbusPort_5();
     int setupModbusPort_6();
 
+	void startTempRun();
 	void readMasterPipe();
-	void updateCalibrationLcd(const double, const double, const double, const double);
-	void readData(const int, const bool);
-    void updateLoopStatus(const int, const double, const double, const double);
+	void updateLoopStatus(const double, const double, const double, const double);
+	void readPipe(const int, const bool);
 	void inject(const int, const bool);
 	void setProductAndCalibrationMode();
     void masterPipe(int, QString, bool);
@@ -390,6 +395,7 @@ public:
     void connectReturnPressed();
     void connectProductBtnPressed();
 	void connectMasterPipe();
+	void connectCheckbox();
     void setupModbusPorts();
     void updateLoopTabIcon(const bool);
     void updateStartButtonLabel();
@@ -404,11 +410,13 @@ public:
 
 private slots:
 
+	void onCheckboxClicked(const bool);
 	void onMasterPipeToggled(const bool);
-    void calibrate();
+    void runInjection();
+    void runTempRun();
     void stopCalibration();
 	void updateFileList(const QString, const int, const int);
-	void createCalibrateFile(const int, const int, const QString, const QString, const QString, const QString);
+	void createInjectionFile(const int, const int, const QString, const QString, const QString, const QString);
     void onCalibrationButtonPressed();
     void onRtuPortActive(bool);
     void changeSerialPort(int);
@@ -433,8 +441,8 @@ private slots:
     void onZTemp();
     void onActionMainServer();
     void onActionLocalServer();
-    void onIntervalCalibration();
-    void onIntervalRollover();
+    void onIntervalSmallPump();
+    void onIntervalBigPump();
     void onLoopNumber();
 	void onActionMinMaster();
 	void onActionMaxMaster();
@@ -443,7 +451,7 @@ private slots:
 	void onActionWater();
 	void onActionOil();
 
-    void createLoopFile(const int, const QString, const QString, const QString, const int);
+    void createTempRunFile(const int, const QString, const QString, const QString, const int);
     void initializeToolbarIcons(void);
     void clearMonitors( void );
     void updateRequestPreview( void );
@@ -452,7 +460,6 @@ private slots:
     void sendModbusRequest( void );
     void onSendButtonPress( void );
     void pollForDataOnBus( void );
-    void openBatchProcessor();
     void aboutQModBus( void );
     void onCheckBoxChecked(bool);
     void resetStatus( void );
@@ -507,11 +514,6 @@ private:
     bool m_tcpActive;
     bool m_poll;
 	bool isModbusTransmissionFailed;
-
-	/// QFuture Calibration Thread
-	QFuture<void> future_P1;
-	QFuture<void> future_P2;
-	QFuture<void> future_P3;
 
 	/// loop objects
 	LOOPS LOOP;
