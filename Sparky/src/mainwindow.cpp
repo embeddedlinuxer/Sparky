@@ -2504,7 +2504,7 @@ getUserInputMessage(const QString msg_0, const QString msg_1, const QString msg_
     msgBox.setWindowTitle(msg_0);
     msgBox.setText(msg_1);
     msgBox.setInformativeText(msg_2);
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
     int msgAnswer = msgBox.exec();
     switch (msgAnswer) {
         case QMessageBox::Ok: return true;
@@ -2645,7 +2645,7 @@ prepareCalibration()
 		return false;
 	}
 
-	/// check port connection
+	/// check serial port
    	if (LOOP.modbus == NULL)
    	{
        	/// update tab icon
@@ -2654,7 +2654,7 @@ prepareCalibration()
        	return false;
    	}
 
-	/// check id validation
+	/// check id
 	if (!validateSerialNumber(LOOP.serialModbus))
 	{
 		/// stop calibration
@@ -2662,17 +2662,7 @@ prepareCalibration()
        	return false;
 	}
 
-	/// toggle start button
-    if (LOOP.isCal)
-	{
-		stopCalibration();
-		return false;
-	}
-
-	/// start calibration
-	LOOP.isCal = true;
-
-	/// calibration on
+	/// update button label
 	ui->pushButton_4->setText("S T O P");
 
 	/// reset initial triggers
@@ -2713,6 +2703,14 @@ void
 MainWindow::
 onCalibrationButtonPressed()
 {
+	LOOP.isCal = !LOOP.isCal;
+
+	if (!LOOP.isCal) 
+	{
+		stopCalibration();
+		return;
+	}
+
 	/// update button label
     ui->pushButton_4->setText("S T O P");
 
@@ -2770,8 +2768,8 @@ stopCalibration()
 
 	int i;
 
-	LOOP.isMaster = false;
     LOOP.isCal = false;
+	LOOP.isMaster = false;
     LOOP.isEEA = false;
     LOOP.isAMB = false;
     LOOP.isMinRef = false;
@@ -2785,6 +2783,8 @@ stopCalibration()
 		PIPE[i].status = DISABLED;
 		PIPE[i].checkBox->setChecked(false);
 	}
+
+	return;
 }
 
 
@@ -3280,7 +3280,6 @@ runInjection()
 			if (LOOP.mode != LOW) 
 			{
 				/// finish calibration
-       			LOOP.isCal = false;
 				stopCalibration();
        			displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration is complete.");
 				return;
@@ -3482,7 +3481,6 @@ runInjection()
 		}
 
 		/// finish calibration
-   		LOOP.isCal = false;
 		stopCalibration();
       	displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration has finished successfully.");
 
