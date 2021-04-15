@@ -23,7 +23,6 @@
 #include "ui_about.h"
 #include "modbus-rtu.h"
 #include "modbus.h"
-#include "qcgaugewidget.h"
 
 #define RELEASE_VERSION             "0.0.8"
 #define RAZ                         0 
@@ -62,9 +61,9 @@
 #define LOW                         "\\LOWCUT\\LC"
 
 /// header lines
-#define HEADER3                     "Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection";
-#define HEADER4                     "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Comment";
-#define HEADER5                     "========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== ============";
+#define HEADER3                     "Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection  Maste Pipe  Master Pipe Master Pipe Master Pipe Master Pipe";
+#define HEADER4                     "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Temperature Oil Adjust  Frequency   Water Cut   Oil Rp      Comment";
+#define HEADER5                     "========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== =========== =========== =========== =========== =========== ========";
 
 /// loop
 #define L1                          0
@@ -189,11 +188,11 @@ typedef struct PIPE_OBJECT
     QElapsedTimer * etimer;
     QCheckBox * checkBox;
     QCheckBox * lineView; 
-    QLCDNumber * lcdWatercut;
-    QLCDNumber * lcdStartFreq;
-    QLCDNumber * lcdFreq;
-    QLCDNumber * lcdTemp;
-    QLCDNumber * lcdReflectedPower;
+    QLineEdit * watercut;
+    QLineEdit * startFreq;
+    QLineEdit * freq;
+    QLineEdit * temp;
+    QLineEdit * reflectedPower;
 	QProgressBar * freqProgress;
 	QProgressBar * tempProgress;
 
@@ -206,7 +205,7 @@ typedef struct PIPE_OBJECT
     double measai;
     double trimai;
 
-	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), status(ENABLED), rolloverTracker(0), calFile(""),  mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), lcdWatercut(new QLCDNumber), lcdStartFreq(new QLCDNumber), lcdFreq(new QLCDNumber), lcdTemp(new QLCDNumber), lcdReflectedPower(new QLCDNumber), freqProgress(new QProgressBar), tempProgress(new QProgressBar),temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), frequency_start(0), oilrp(0), measai(0), trimai(0) {}
+	PIPE_OBJECT() : osc(0), tempStability(0), freqStability(0), status(ENABLED), rolloverTracker(0), calFile(""),  mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), watercut(new QLineEdit), startFreq(new QLineEdit), freq(new QLineEdit), temp(new QLineEdit), reflectedPower(new QLineEdit), freqProgress(new QProgressBar), tempProgress(new QProgressBar),temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), frequency_start(0), oilrp(0), measai(0), trimai(0) {}
 
     //This is the destructor.  Will delete the array of vertices, if present.
     ~PIPE_OBJECT()
@@ -216,11 +215,11 @@ typedef struct PIPE_OBJECT
         if (etimer) delete etimer;
         if (checkBox) delete checkBox;
         if (lineView) delete lineView; 
-        if (lcdWatercut) delete lcdWatercut;
-        if (lcdStartFreq) delete lcdStartFreq;
-        if (lcdFreq) delete lcdFreq;
-        if (lcdTemp) delete lcdTemp;
-        if (lcdReflectedPower) delete lcdReflectedPower;
+        if (watercut) delete watercut;
+        if (startFreq) delete startFreq;
+        if (freq) delete freq;
+        if (temp) delete temp;
+        if (reflectedPower) delete reflectedPower;
 		if (freqProgress) delete freqProgress;
 		if (tempProgress) delete tempProgress;
     }
@@ -398,7 +397,6 @@ public:
 	void connectCheckbox();
     void setupModbusPorts();
     void updateLoopTabIcon(const bool);
-    void updateStartButtonLabel();
     bool prepareCalibration();
     void initializeTabIcons();
     float toFloat(QByteArray arr);
@@ -410,22 +408,9 @@ public:
 
 private slots:
 
-	void onCheckboxClicked(const bool);
-	void onMasterPipeToggled(const bool);
-    void runInjection();
-    void runTempRun();
-    void stopCalibration();
-	void updateFileList(const QString, const int, const int);
-	void createInjectionFile(const int, const int, const QString, const QString, const QString, const QString);
-    void onCalibrationButtonPressed();
-    void onRtuPortActive(bool);
-    void changeSerialPort(int);
-
-    void toggleLineView_P1(bool); 
+	void toggleLineView_P1(bool); 
     void toggleLineView_P2(bool); 
     void toggleLineView_P3(bool); 
-
-    void onModeChanged(bool);
 
     /// config menu
     void injectionPumpRates();
@@ -450,7 +435,16 @@ private slots:
 	void onActionDeltaMasterFinal();
 	void onActionWater();
 	void onActionOil();
-
+    void onModeChanged(bool);
+	void onMasterPipeToggled(const bool);
+    void runInjection();
+    void runTempRun();
+    void stopCalibration();
+	void updateFileList(const QString, const int, const int);
+	void createInjectionFile(const int, const int, const QString, const QString, const QString, const QString);
+    void onCalibrationButtonPressed();
+    void onRtuPortActive(bool);
+    void changeSerialPort(int);
     void createTempRunFile(const int, const QString, const QString, const QString, const int);
     void initializeToolbarIcons(void);
     void clearMonitors( void );
@@ -462,6 +456,7 @@ private slots:
     void pollForDataOnBus( void );
     void aboutQModBus( void );
     void onCheckBoxChecked(bool);
+	void onCheckBoxClicked(const bool);
     void resetStatus( void );
     void setStatusError(const QString &msg);    
     void onFloatButtonPressed(bool);

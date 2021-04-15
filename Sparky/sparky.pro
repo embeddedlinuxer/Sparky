@@ -15,7 +15,7 @@ SOURCES += src/main.cpp \
 #    src/ipaddressctrl.cpp \
 #    src/iplineedit.cpp \
 #    src/serialsetting.cpp \
-    src/qcgaugewidget.cpp
+#    src/qcgaugewidget.cpp
 
 HEADERS += src/mainwindow.h \
     src/BatchProcessor.h \
@@ -26,7 +26,7 @@ HEADERS += src/mainwindow.h \
 #    src/ipaddressctrl.h \
 #    src/iplineedit.h \
 #    src/serialsetting.h \
-    src/qcgaugewidget.h
+#    src/qcgaugewidget.h
 
 INCLUDEPATH += 3rdparty/libmodbus \
                3rdparty/libmodbus/src \

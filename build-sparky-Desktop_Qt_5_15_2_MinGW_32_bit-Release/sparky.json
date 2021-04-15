@@ -3,7 +3,7 @@
     "LOOP.InjectionTemp": "38",
     "LOOP.IntervalBigPump": "0",
     "LOOP.IntervalSmallPump": "0.25",
-    "LOOP.LoopNumber": "0",
+    "LOOP.LoopNumber": "1",
     "LOOP.Mark": "0",
     "LOOP.MasterDelta": "0",
     "LOOP.MasterDeltaFinal": "0",
@@ -22,5 +22,5 @@
     "LOOP.YFreq": "0",
     "LOOP.ZTemp": "0",
     "LocalServer": "",
-    "MainServer": ""
+    "MainServer": "G:/calibration"
 }
