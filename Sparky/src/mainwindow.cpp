@@ -1104,7 +1104,7 @@ MainWindow::
 injectionMethod()
 {
     bool ok;
-    LOOP.injectionMethod = QInputDialog::getDouble(this,tr("Injection Method"),tr("Enter Injection Method: 201"), LOOP.injectionMethod, -10000, 10000, 2, &ok,Qt::WindowFlags(), 1);
+    LOOP.injectionMethod = QInputDialog::getDouble(this,tr("Injection Method"),tr("Enter Injection Method: "), LOOP.injectionMethod, -10000, 10000, 2, &ok,Qt::WindowFlags(), 1);
 
     /// update json config file
     writeJsonConfigFile();
@@ -1116,7 +1116,7 @@ MainWindow::
 onActionPressureSensorSlope()
 {
     bool ok;
-    LOOP.pressureSensorSlope = QInputDialog::getDouble(this,tr("Pressure Sensor Slope"),tr("Enter Pressure Sensor Slope: 1.0"), LOOP.pressureSensorSlope, -10000, 10000, 2, &ok,Qt::WindowFlags(), 1);
+    LOOP.pressureSensorSlope = QInputDialog::getDouble(this,tr("Pressure Sensor Slope"),tr("Enter Pressure Sensor Slope: "), LOOP.pressureSensorSlope, -10000, 10000, 2, &ok,Qt::WindowFlags(), 1);
 
     /// update json config file
     writeJsonConfigFile();
@@ -1127,7 +1127,7 @@ MainWindow::
 onMinRefTemp()
 {
     bool ok;
-    LOOP.minRefTemp = QInputDialog::getInt(this,tr("Minimum Reference Temperature"),tr("Enter Minimum Reference Temperature: 20"), LOOP.minRefTemp, 0, 1000, 2, &ok);
+    LOOP.minRefTemp = QInputDialog::getInt(this,tr("Minimum Reference Temperature"),tr("Enter Minimum Reference Temperature: "), LOOP.minRefTemp, 0, 1000, 2, &ok);
 
     /// update json config file
     writeJsonConfigFile();
@@ -1138,7 +1138,7 @@ MainWindow::
 onMaxRefTemp()
 {
     bool ok;
-    LOOP.maxRefTemp = QInputDialog::getInt(this,tr("Maximum Reference Temperature"),tr("Enter Maximum Reference Temperature: 55"), LOOP.maxRefTemp, 0, 1000, 2, &ok);
+    LOOP.maxRefTemp = QInputDialog::getInt(this,tr("Maximum Reference Temperature"),tr("Enter Maximum Reference Temperature: "), LOOP.maxRefTemp, 0, 1000, 2, &ok);
 
     /// update json config file
     writeJsonConfigFile();
@@ -1149,7 +1149,7 @@ MainWindow::
 onInjectionTemp()
 {
     bool ok;
-    LOOP.injectionTemp = QInputDialog::getInt(this,tr("Injection Temperature"),tr("Enter Injection Temperature: 38"), LOOP.injectionTemp, 0, 1000, 2, &ok);
+    LOOP.injectionTemp = QInputDialog::getInt(this,tr("Injection Temperature"),tr("Enter Injection Temperature: "), LOOP.injectionTemp, 0, 1000, 2, &ok);
 
     /// update json config file
     writeJsonConfigFile();
@@ -1161,7 +1161,7 @@ MainWindow::
 onXDelay()
 {
     bool ok;
-    LOOP.xDelay = QInputDialog::getInt(this,tr("X Delay"),tr("Enter Delay Peroid (seconds): 10"), LOOP.xDelay, 0, 3600, 2, &ok);
+    LOOP.xDelay = QInputDialog::getInt(this,tr("X Delay"),tr("Enter Delay Peroid (seconds): "), LOOP.xDelay, 0, 3600, 2, &ok);
 
     /// update json config file
     writeJsonConfigFile();
@@ -1232,7 +1232,7 @@ MainWindow::
 onActionMinMaster()
 {
     bool ok;
-    LOOP.masterMin = QInputDialog::getDouble(this,tr("Master Pipe"),tr("Enter Minimum Master Watercut (%): -0.1"), LOOP.masterMin, -1000, 1000, 2, &ok,Qt::WindowFlags(), 1);
+    LOOP.masterMin = QInputDialog::getDouble(this,tr("Master Pipe"),tr("Enter Minimum Master Watercut (%): "), LOOP.masterMin, -1000, 1000, 2, &ok,Qt::WindowFlags(), 1);
 
     /// update json config file
     writeJsonConfigFile();
@@ -2351,7 +2351,7 @@ createInjectionFile(const int sn, const int pipe, const QString startValue, cons
     {
         /// create headers
         header2 = "TEMPERATURE:  "+startValue+" °C "+"to "+stopValue+" °C\n";
-        header21 = "INJECTION:  "+LOOP.oilRunStop->text()+" % "+"to "+LOOP.oilRunStart->text()+" % Watercut\n";
+        header21 = "INJECTION:  "+LOOP.oilRunStart->text()+" % "+"to "+LOOP.oilRunStop->text()+" % Watercut\n";
         header22 = "ROLLOVER:  "+QString::number(LOOP.watercut)+" % "+"to "+"rollover\n";
 
 		/// set filenames
@@ -2713,6 +2713,7 @@ onCalibrationButtonPressed()
 
 	/// update button label
     ui->pushButton_4->setText("S T O P");
+    delay();
 
     /// scan calibration variables
     if (!prepareCalibration()) return;
@@ -2990,7 +2991,7 @@ runTempRun()
            		{
 					/// read data
 					(abs(LOOP.minRefTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
-					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,12,'f',2,' ');
+					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,8,'f',2,' ');
 
 					/// write to file
                		writeToCalFile(pipe, data_stream);
@@ -3038,7 +3039,7 @@ runTempRun()
 					/// read data
 					(abs(LOOP.maxRefTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
 					LOOP.watercut = LOOP.oilRunStart->text().toDouble();
-					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,12,'f',2,' ');
+					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,8,'f',2,' ');
 
 					/// write to file
    	            	writeToCalFile(pipe, data_stream);
@@ -3084,7 +3085,7 @@ runTempRun()
        			{
 					/// read data
 					(abs(LOOP.injectionTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
-					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,12,'f',2,' ');
+					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,8,'f',2,' ');
 
 					/// write to file
            			writeToCalFile(pipe, data_stream);
@@ -3098,6 +3099,16 @@ runTempRun()
            				else if (LOOP.mode == MID) prepareForNextFile(pipe,QString("OIL__").append(QString::number(LOOP.injectionTemp)).append(".MCI"));
 						readPipe(pipe, STABILITY_CHECK);
 						PIPE[pipe].frequency_start = PIPE[pipe].frequency;
+
+						/// check condition for injection
+						if (LOOP.isCal && (PIPE[0].checkBox->isChecked() || PIPE[1].checkBox->isChecked() || PIPE[2].checkBox->isChecked())) 
+						{
+							if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) 
+							{
+								QTimer::singleShot(LOOP.xDelay*10, this, &MainWindow::runInjection);
+								return;
+							}
+						}
 					}
        			}
    			}
@@ -3106,8 +3117,7 @@ runTempRun()
 	
     if (LOOP.isCal && (PIPE[0].checkBox->isChecked() || PIPE[1].checkBox->isChecked() || PIPE[2].checkBox->isChecked())) 
 	{
-		if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) QTimer::singleShot(LOOP.xDelay*10, this, &MainWindow::runInjection);
-		else QTimer::singleShot(LOOP.xDelay*1000, this, &MainWindow::runTempRun); /// xDelay * 1000 = xDelay seconds
+		QTimer::singleShot(LOOP.xDelay*1000, this, &MainWindow::runTempRun); /// xDelay * 1000 = xDelay seconds
 	}
 	else
 	{
@@ -3126,9 +3136,9 @@ runInjection()
 	static double injectionTime = 0;
 	static double totalInjectionTime = 0;
 	static double accumulatedInjectionTime_prev = 0;
-	static double correctedWatercut;
-	static double measuredWatercut;
-   	static double injectedVolume;
+	static double correctedWatercut = 0;
+	static double measuredWatercut = 0;
+   	static double totalInjectionVolume = 0;
 
    	QString data_stream;
 
@@ -3147,8 +3157,6 @@ runInjection()
 	{   
 		if (LOOP.isInjection)
 		{
-			LOOP.isInjection = false;
-			LOOP.watercut = 0; 
 			bool ok;
    			displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("Water Injection Bucket:"),QString("Please make sure there is enough water in the water injection bucket"));
        		LOOP.oilRunStart->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber),tr(qPrintable("Enter Measured Initial Watercut")), QLineEdit::Normal,"0.0", &ok));
@@ -3159,8 +3167,8 @@ runInjection()
 				if (PIPE[pipe].status == DONE) 
 				{
 					PIPE[pipe].status = ENABLED;
-					if (LOOP.mode == LOW) createInjectionFile(PIPE[pipe].slave->text().toInt(), pipe, LOOP.oilRunStart->text(), LOOP.oilRunStart->text(), 0, "CALIBRAT");
-					else if (LOOP.mode == MID) createInjectionFile(PIPE[pipe].slave->text().toInt(), pipe, "OIL", LOOP.oilRunStart->text(), 0, "MID");
+					if (LOOP.mode == LOW) createInjectionFile(PIPE[pipe].slave->text().toInt(), pipe, LOOP.oilRunStart->text(), LOOP.oilRunStop->text(), 0, "CALIBRAT");
+					else if (LOOP.mode == MID) createInjectionFile(PIPE[pipe].slave->text().toInt(), pipe, "OIL", LOOP.oilRunStop->text(), 0, "MID");
 					updatePipeStatus(pipe, LOOP.watercut, PIPE[pipe].frequency, PIPE[pipe].frequency, PIPE[pipe].temperature, PIPE[pipe].oilrp);
 				}
 			}
@@ -3168,25 +3176,39 @@ runInjection()
 
    		if (LOOP.oilRunStop->text().toDouble() > LOOP.watercut)
    		{
+			//////////////////////////////
+			//// READ DATA AND UPDATE FILE 
+			//////////////////////////////
 			for (int pipe = 0; pipe < 3; pipe++)
 			{
 				if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked())
 				{
 					/// read data
 					readPipe(pipe, NO_STABILITY_CHECK);
-					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,12,'f',2,' ');
+					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,8,'f',2,' ');
 
 					/// write to calibration file
            			writeToCalFile(pipe, data_stream);
+
+					/// reset LOOP.watercut and disable initialization
+					if (LOOP.isInjection)
+					{
+						LOOP.watercut = 0; 
+						LOOP.isInjection = false;
+					}
 				}
 			}
 
-			//////////////////////////////
-			//// RUN IN MASTER PIPE MODE
-			//////////////////////////////
+			///////////////////////////////////////
+			//// INJECT WATER IN MASTER PIPE MODE
+			///////////////////////////////////////
 			if (LOOP.isMaster)
 			{
 				int masterInjectionStartTime = PIPE[0].etimer->elapsed()/1000;
+				
+				/// start injection	
+				inject(COIL_WATER_PUMP,true);
+
 				while (LOOP.masterWatercut < LOOP.watercut)
 				{
 					int masterInjectionTime = PIPE[0].etimer->elapsed()/1000;
@@ -3199,24 +3221,28 @@ runInjection()
    						displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("Injection Time: ")+QString::number(masterInjectionTime - masterInjectionStartTime),QString("Injection Time Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater));
 						return;
 					}
-					else inject(COIL_WATER_PUMP,true);
 
-					/// read master pipe asap
 					readMasterPipe();
 				}
 
 				/// stop water injection
 				inject(COIL_WATER_PUMP,false);
+				int masterInjectionEndTime = PIPE[0].etimer->elapsed()/1000;
+				totalInjectionVolume += (masterInjectionEndTime-masterInjectionStartTime)*LOOP.injectionWaterPumpRate/60;
 
 				/// set next watercut
 				(LOOP.mode == LOW) ? LOOP.watercut += LOOP.intervalSmallPump : LOOP.watercut += LOOP.intervalBigPump; 
 			}
+			///////////////////////////////////////
+			//// INJECT WATER IN PUMP RATE MODE 
+			///////////////////////////////////////
 			else
 			{
 				/// next injection time and update totalInjectionTime
 				double accumulatedInjectionTime = -(LOOP.loopVolume->text().toDouble()/(LOOP.injectionWaterPumpRate/60))*log((1-(LOOP.watercut - LOOP.oilRunStart->text().toDouble())/100));
 				injectionTime = accumulatedInjectionTime - accumulatedInjectionTime_prev;
-				totalInjectionTime += injectionTime; /// totalInjectionTime  needs to remain loop specific
+				totalInjectionTime += injectionTime;
+				totalInjectionVolume = totalInjectionTime*LOOP.injectionWaterPumpRate/60;
 				accumulatedInjectionTime_prev = accumulatedInjectionTime;
 
 				/// update calibration status
@@ -3243,7 +3269,6 @@ runInjection()
    	   		/// enter measured watercut and injected volume
 			bool ok;
    	   		measuredWatercut = QInputDialog::getDouble(this, QString("LOOP ")+QString::number(LOOP.loopNumber),tr(qPrintable("Enter Measured Watercut [%]")), 0.0, 0, 100, 2, &ok,Qt::WindowFlags(), 1);
-   	   		injectedVolume = QInputDialog::getDouble(this, QString("LOOP ")+QString::number(LOOP.loopNumber),tr(qPrintable("Enter Injected Volume [ML]")), 0.0, 0, 100000, 3, &ok,Qt::WindowFlags(), 1);
 
 			if (LOOP.isMaster) 
 			{
@@ -3256,10 +3281,10 @@ runInjection()
 			/// finalize and close
   			QDateTime currentDataTime = QDateTime::currentDateTime();
   			QString data_stream   = QString("Total injection time   = %1 s").arg(totalInjectionTime, 10, 'g', -1, ' ');
-  			QString data_stream_2 = QString("Total injection volume = %1 mL").arg(injectedVolume, 10, 'g', -1, ' ');
+  			QString data_stream_2 = QString("Total injection volume = %1 mL").arg(totalInjectionVolume, 10, 'g', -1, ' ');
   			QString data_stream_3 = QString("Initial loop volume    = %1 mL").arg(LOOP.loopVolume->text().toDouble(), 10, 'g', -1, ' ');
   			QString data_stream_4 = QString("Measured watercut      = %1 %").arg(measuredWatercut, 10, 'f', 2, ' ');
-  			QString data_stream_5 = QString("[%1] | [%2]").arg(currentDataTime.toString()).arg(LOOP.operatorName);
+  			QString data_stream_5 = QString("[%1] [%2]").arg(currentDataTime.toString()).arg(LOOP.operatorName);
 
 			for (int pipe=0; pipe<3; pipe++)
 			{
@@ -3281,7 +3306,7 @@ runInjection()
 			{
 				/// finish calibration
 				stopCalibration();
-       			displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration is complete.");
+      			displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration has finished successfully.");
 				return;
 			}
 					
@@ -3290,7 +3315,7 @@ runInjection()
 			/// ADJUSTED.LCI
 			////////////////////////////////////////////////////
 			////////////////////////////////////////////////////
-		 	if (abs(injectedVolume - (LOOP.injectionWaterPumpRate/60)*totalInjectionTime) > 0) 
+		 	if (abs(totalInjectionVolume - (LOOP.injectionWaterPumpRate/60)*totalInjectionTime) > 0) 
 			{
 				for (int pipe=0; pipe<3; pipe++)
 				{
@@ -3393,7 +3418,7 @@ runInjection()
 				else PIPE[pipe].rolloverTracker = 0;
 					
 				/// read data
-				data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,12,'f',2,' ');
+				data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,8,'f',2,' ');
 
    				/// create a new file if needed
   				if (!QFileInfo(PIPE[pipe].file).exists()) 
@@ -3437,7 +3462,8 @@ runInjection()
 			/// next injection time and update totalInjectionTime
 			double accumulatedInjectionTime = -(LOOP.loopVolume->text().toDouble()/(LOOP.injectionWaterPumpRate/60))*log((1-(LOOP.watercut - LOOP.oilRunStart->text().toDouble())/100));
 			injectionTime = accumulatedInjectionTime - accumulatedInjectionTime_prev;
-			totalInjectionTime += injectionTime; /// totalInjectionTime  needs to remain loop specific
+			totalInjectionTime += injectionTime;
+			totalInjectionVolume = totalInjectionTime*LOOP.injectionWaterPumpRate/60;
 			accumulatedInjectionTime_prev = accumulatedInjectionTime;
 
 			/// update calibration status
@@ -3464,9 +3490,9 @@ runInjection()
    		/// finalize and close
    		QDateTime currentDataTime = QDateTime::currentDateTime();
    		QString data_stream   = QString("Total injection time   = %1 s").arg(totalInjectionTime, 10, 'g', -1, ' ');
-   		QString data_stream_2 = QString("Total injection volume = %1 mL").arg(injectedVolume, 10, 'g', -1, ' ');
+   		QString data_stream_2 = QString("Total injection volume = %1 mL").arg(totalInjectionVolume, 10, 'g', -1, ' ');
    		QString data_stream_3 = QString("Initial loop volume    = %1 mL").arg(LOOP.loopVolume->text().toDouble(), 10, 'g', -1, ' ');
-   		QString data_stream_4 = QString("[%1]").arg(currentDataTime.toString());
+  		QString data_stream_4 = QString("[%1] [%2]").arg(currentDataTime.toString()).arg(LOOP.operatorName);
 
 		for (int pipe=0; pipe<3; pipe++)
 		{
@@ -3707,8 +3733,6 @@ onUpdateRegisters(const bool isEEA)
         LOOP.ID_WATER_ADJUST = 25;
         LOOP.ID_FREQ = 111;
         LOOP.ID_OIL_RP = 115;
-
-        //ui->groupBox_6->setEnabled(true);
     }
     else
     {
@@ -3720,11 +3744,7 @@ onUpdateRegisters(const bool isEEA)
         LOOP.ID_WATER_ADJUST = 17;
         LOOP.ID_FREQ = 19;
         LOOP.ID_OIL_RP = 61;
-
-        //ui->radioButton_5->setChecked(true);
-        //ui->groupBox_6->setEnabled(false);
     }
-
 	/// master pipe
 	LOOP.ID_MASTER_WATERCUT = 11;
 	LOOP.ID_MASTER_TEMPERATURE = 15; 
@@ -3732,6 +3752,15 @@ onUpdateRegisters(const bool isEEA)
 	LOOP.ID_MASTER_OIL_ADJUST = 23;
 	LOOP.ID_MASTER_OIL_RP = 115; 
 	LOOP.ID_MASTER_FREQ = 111; 
+/*
+	/// master pipe
+	LOOP.ID_MASTER_WATERCUT = 3;
+	LOOP.ID_MASTER_TEMPERATURE = 33; 
+	LOOP.ID_MASTER_SALINITY = 9;
+	LOOP.ID_MASTER_OIL_ADJUST = 15;
+	LOOP.ID_MASTER_OIL_RP = 61; 
+	LOOP.ID_MASTER_FREQ = 19; 
+*/
 }
 
 
