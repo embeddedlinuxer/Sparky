@@ -15,6 +15,7 @@
     "LOOP.Method": "0",
     "LOOP.MinRefTemp": "22",
     "LOOP.OilPumpRate": "37",
+    "LOOP.PortIndex": "1",
     "LOOP.PresssureSensorSlope": "0",
     "LOOP.SmallWaterPumpRate": "0",
     "LOOP.WaterPumpRate": "33",

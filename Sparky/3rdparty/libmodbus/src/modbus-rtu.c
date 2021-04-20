@@ -120,7 +120,7 @@ static int _modbus_set_slave(modbus_t *ctx, int slave)
 /* Builds a RTU request header */
 static int _modbus_rtu_build_request_basis(modbus_t *ctx, int function, int addr, int nb, uint8_t *req)
 {
-    if (ctx->slave > 254) // DKOH : extended slaveid
+    if (ctx->slave > 256) // DKOH : extended slaveid
     {
         req[0] = 0xFA;
         req[1] = (ctx->slave>>24) & 0xFF;

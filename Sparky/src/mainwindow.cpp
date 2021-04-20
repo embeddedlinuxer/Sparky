@@ -56,6 +56,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
     initializeModbusMonitor();
 	setValidators();
 
+	ui->groupBox_18->hide(); // hide connect group box at start
     ui->regTable->setColumnWidth( 0, 150 );
     m_statusInd = new QWidget;
     m_statusInd->setFixedSize( 16, 16 );
@@ -137,9 +138,14 @@ initializeToolbarIcons() {
 
     ui->toolBar->addAction(ui->actionOpen);
     ui->toolBar->addAction(ui->actionSave);
+
     ui->toolBar->addSeparator();
-    ui->actionDisconnect->setDisabled(TRUE);
-    ui->actionConnect->setEnabled(TRUE);
+    ui->toolBar->addAction(ui->actionSettings);
+
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(ui->actionDisconnect);
+    //ui->actionDisconnect->setEnabled(TRUE);
+
 }
 
 void
@@ -841,6 +847,9 @@ connectToolbar()
 {
     connect(ui->actionSave, SIGNAL(triggered()),this,SLOT(saveCsvFile()));
     connect(ui->actionOpen, SIGNAL(triggered()),this,SLOT(loadCsvFile()));
+    connect(ui->actionDisconnect, SIGNAL(triggered()),this,SLOT(onActionDisconnect()));
+    connect(ui->actionConnect, SIGNAL(triggered()),this,SLOT(onActionConnect()));
+    connect(ui->actionSettings, SIGNAL(triggered()),this,SLOT(onActionSettings()));
 
     /// injection pump rates
     connect(ui->actionInjection_Pump_Rates, SIGNAL(triggered()),this,SLOT(injectionPumpRates()));
@@ -1012,6 +1021,7 @@ readJsonConfigFile()
 	LOOP.masterDeltaFinal = json[LOOP_MASTER_DELTA_FINAL].toDouble();
 	LOOP.maxInjectionWater = json[LOOP_MAX_INJECTION_WATER].toInt();
 	LOOP.maxInjectionOil = json[LOOP_MAX_INJECTION_OIL].toInt();
+	LOOP.portIndex = json[LOOP_PORT_INDEX].toInt();
 
     /// done. close file.
 	file.close();
@@ -1054,6 +1064,7 @@ writeJsonConfigFile(void)
 	json[LOOP_MASTER_DELTA_FINAL] = QString::number(LOOP.masterDeltaFinal);
 	json[LOOP_MAX_INJECTION_WATER] = QString::number(LOOP.maxInjectionWater);
 	json[LOOP_MAX_INJECTION_OIL] = QString::number(LOOP.maxInjectionOil);
+	json[LOOP_PORT_INDEX] = QString::number(LOOP.portIndex);
 
     /// file server 
 	json[MAIN_SERVER] = m_mainServer;
@@ -1468,6 +1479,52 @@ saveCsvFile()
     }
 
     file.close();
+}
+
+
+void
+MainWindow::
+onActionDisconnect()
+{
+	ui->toolBar->addAction(ui->actionConnect);
+    //ui->actionDisconnect->setDisabled(TRUE);
+    ui->actionDisconnect->setVisible(false);
+    ui->actionConnect->setEnabled(TRUE);
+    ui->actionConnect->setVisible(true);
+	ui->groupBox_18->setChecked(true);
+}
+
+
+void
+MainWindow::
+onActionConnect()
+{
+	ui->toolBar->addAction(ui->actionDisconnect);
+    ui->actionDisconnect->setEnabled(TRUE);
+    ui->actionDisconnect->setVisible(true);
+    //ui->actionConnect->setDisabled(TRUE);
+    ui->actionConnect->setVisible(false);
+	ui->groupBox_18->setChecked(false);
+}
+
+void
+MainWindow::
+onActionSettings()
+{
+	static bool on = true;
+
+	if (on) 
+	{
+		ui->groupBox_18->show();
+		ui->groupBox_12->hide();
+	}
+	else
+	{
+		ui->groupBox_18->hide();
+		ui->groupBox_12->show();
+	}
+
+	on = !on;
 }
 
 
@@ -2116,7 +2173,7 @@ setupModbusPort()
 {
     QSettings s;
 
-    int portIndex = 0;
+    int portIndex = LOOP.portIndex;
     int i = 0;
     ui->comboBox->disconnect();
     ui->comboBox->clear();
@@ -2169,6 +2226,8 @@ MainWindow::
 changeSerialPort( int )
 {
     const int iface = ui->comboBox->currentIndex();
+    LOOP.portIndex = iface;
+    writeJsonConfigFile();
 
     QList<QextPortInfo> ports = QextSerialEnumerator::getPorts();
     if( !ports.isEmpty() )
@@ -2227,8 +2286,12 @@ onCheckBoxChecked(bool checked)
 {
     clearMonitors();
 
-    if (checked) setupModbusPort();
-    //else releaseSerialModbus();
+    if (checked) 
+	{
+		setupModbusPort();
+		updateLoopTabIcon(true);
+	}
+	else updateLoopTabIcon(false);
 
     onRtuPortActive(checked);
 }
@@ -3752,15 +3815,6 @@ onUpdateRegisters(const bool isEEA)
 	LOOP.ID_MASTER_OIL_ADJUST = 23;
 	LOOP.ID_MASTER_OIL_RP = 115; 
 	LOOP.ID_MASTER_FREQ = 111; 
-/*
-	/// master pipe
-	LOOP.ID_MASTER_WATERCUT = 3;
-	LOOP.ID_MASTER_TEMPERATURE = 33; 
-	LOOP.ID_MASTER_SALINITY = 9;
-	LOOP.ID_MASTER_OIL_ADJUST = 15;
-	LOOP.ID_MASTER_OIL_RP = 61; 
-	LOOP.ID_MASTER_FREQ = 19; 
-*/
 }
 
 
