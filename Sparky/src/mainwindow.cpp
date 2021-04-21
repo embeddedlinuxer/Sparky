@@ -56,7 +56,16 @@ MainWindow::MainWindow( QWidget * _parent ) :
     initializeModbusMonitor();
 	setValidators();
 
-	ui->groupBox_18->hide(); // hide connect group box at start
+	/// hide main configuration panel at start
+	ui->groupBox_18->hide();
+	ui->groupBox_35->hide();
+	ui->groupBox_34->hide();
+	ui->groupBox_33->hide();
+	ui->groupBox_32->hide();
+	ui->groupBox_31->hide();
+	ui->groupBox_30->hide();
+	ui->groupBox_29->hide();
+
     ui->regTable->setColumnWidth( 0, 150 );
     m_statusInd = new QWidget;
     m_statusInd->setFixedSize( 16, 16 );
@@ -934,6 +943,7 @@ MainWindow::
 connectCalibrationControls()
 {
     connect(ui->pushButton_4, SIGNAL(pressed()),this, SLOT(onCalibrationButtonPressed()));
+    connect(ui->pushButton, SIGNAL(pressed()),this, SLOT(onTestMasterPipePressed()));
 }
 
 
@@ -1023,6 +1033,30 @@ readJsonConfigFile()
 	LOOP.maxInjectionOil = json[LOOP_MAX_INJECTION_OIL].toInt();
 	LOOP.portIndex = json[LOOP_PORT_INDEX].toInt();
 
+	/// main configuration panel
+	ui->lineEdit_27->setText(QString::number(LOOP.injectionOilPumpRate));
+	ui->lineEdit_28->setText(QString::number(LOOP.injectionWaterPumpRate)); 
+	ui->lineEdit_82->setText(QString::number(LOOP.injectionSmallWaterPumpRate));
+
+	ui->lineEdit_65->setText(QString::number(LOOP.maxInjectionOil));
+	ui->lineEdit_66->setText(QString::number(LOOP.maxInjectionWater));
+
+	ui->lineEdit_67->setText(QString::number(LOOP.minRefTemp));
+	ui->lineEdit_68->setText (QString::number(LOOP.maxRefTemp));
+	ui->lineEdit_69->setText(QString::number(LOOP.injectionTemp));
+
+	ui->lineEdit_72->setText(QString::number(LOOP.xDelay));
+	ui->lineEdit_70->setText(QString::number(LOOP.yFreq));
+	ui->lineEdit_71->setText(QString::number(LOOP.zTemp));
+
+	ui->lineEdit_73->setText(QString::number(LOOP.intervalSmallPump));
+	ui->lineEdit_74->setText(QString::number(LOOP.intervalBigPump));
+
+	ui->lineEdit_75->setText(QString::number(LOOP.masterMin));
+	ui->lineEdit_76->setText(QString::number(LOOP.masterMax));
+	ui->lineEdit_77->setText(QString::number(LOOP.masterDelta));
+	ui->lineEdit_78->setText(QString::number(LOOP.masterDeltaFinal));
+
     /// done. close file.
 	file.close();
 }
@@ -1040,6 +1074,29 @@ writeJsonConfigFile(void)
     /// file server
     json[MAIN_SERVER] = m_mainServer;
 	json[LOCAL_SERVER] = m_localServer;
+
+	LOOP.injectionOilPumpRate = ui->lineEdit_27->text().toDouble();
+	LOOP.injectionWaterPumpRate = ui->lineEdit_28->text().toDouble(); 
+	LOOP.injectionSmallWaterPumpRate = ui->lineEdit_82->text().toDouble();
+
+	LOOP.maxInjectionOil = ui->lineEdit_65->text().toDouble();
+	LOOP.maxInjectionWater = ui->lineEdit_66->text().toDouble();
+
+	LOOP.minRefTemp = ui->lineEdit_67->text().toDouble();
+	LOOP.maxRefTemp = ui->lineEdit_68->text().toDouble();
+	LOOP.injectionTemp = ui->lineEdit_69->text().toDouble();
+
+	LOOP.xDelay =  ui->lineEdit_72->text().toDouble();
+	LOOP.yFreq = ui->lineEdit_70->text().toDouble();
+	LOOP.zTemp = ui->lineEdit_71->text().toDouble();
+
+	LOOP.intervalSmallPump = ui->lineEdit_73->text().toDouble();
+	LOOP.intervalBigPump = ui->lineEdit_74->text().toDouble();
+
+	LOOP.masterMin = ui->lineEdit_75->text().toDouble();
+	LOOP.masterMax =  ui->lineEdit_76->text().toDouble();
+	LOOP.masterDelta =  ui->lineEdit_77->text().toDouble();
+	LOOP.masterDeltaFinal = ui->lineEdit_78->text().toDouble();
 
     /// calibration control variables
 	json[LOOP_OIL_PUMP_RATE] = QString::number(LOOP.injectionOilPumpRate);
@@ -1081,7 +1138,7 @@ injectionPumpRates()
     bool ok;
     LOOP.injectionOilPumpRate = QInputDialog::getDouble(this,tr("Injection Oil Pump Rate"),tr("Enter Injection Oil Pump Rate [mL/min]"),LOOP.injectionOilPumpRate , -10000, 10000, 2, &ok,Qt::WindowFlags(), 1);
     LOOP.injectionWaterPumpRate = QInputDialog::getDouble(this,tr("Injection Water Pump Rate"),tr("Enter Injection Water Pump Rate [mL/min]"), LOOP.injectionWaterPumpRate, -10000, 10000, 2, &ok,Qt::WindowFlags(), 1);
-    if (ui->radioButton_6->isChecked()) LOOP.injectionSmallWaterPumpRate = QInputDialog::getDouble(this,tr("Injection Small Water Pump Rate"),tr("Enter Injection Small Water Pump Rate [mL/min]"),LOOP.injectionSmallWaterPumpRate , -10000, 10000, 2, &ok,Qt::WindowFlags(), 1);
+    LOOP.injectionSmallWaterPumpRate = QInputDialog::getDouble(this,tr("Injection Small Water Pump Rate"),tr("Enter Injection Small Water Pump Rate [mL/min]"),LOOP.injectionSmallWaterPumpRate , -10000, 10000, 2, &ok,Qt::WindowFlags(), 1);
     
     /// update json config file
     writeJsonConfigFile();
@@ -1487,7 +1544,6 @@ MainWindow::
 onActionDisconnect()
 {
 	ui->toolBar->addAction(ui->actionConnect);
-    //ui->actionDisconnect->setDisabled(TRUE);
     ui->actionDisconnect->setVisible(false);
     ui->actionConnect->setEnabled(TRUE);
     ui->actionConnect->setVisible(true);
@@ -1502,7 +1558,6 @@ onActionConnect()
 	ui->toolBar->addAction(ui->actionDisconnect);
     ui->actionDisconnect->setEnabled(TRUE);
     ui->actionDisconnect->setVisible(true);
-    //ui->actionConnect->setDisabled(TRUE);
     ui->actionConnect->setVisible(false);
 	ui->groupBox_18->setChecked(false);
 }
@@ -1515,12 +1570,34 @@ onActionSettings()
 
 	if (on) 
 	{
+		/// calibration configuration
+    	readJsonConfigFile();
 		ui->groupBox_18->show();
+		ui->groupBox_35->show();
+		ui->groupBox_34->show();
+		ui->groupBox_33->show();
+		ui->groupBox_32->show();
+		ui->groupBox_31->show();
+		ui->groupBox_30->show();
+		ui->groupBox_29->show();
+
+		/// main loop configuration 
 		ui->groupBox_12->hide();
 	}
 	else
 	{
+		/// calibration configuration
+    	writeJsonConfigFile();
 		ui->groupBox_18->hide();
+		ui->groupBox_35->hide();
+		ui->groupBox_34->hide();
+		ui->groupBox_33->hide();
+		ui->groupBox_32->hide();
+		ui->groupBox_31->hide();
+		ui->groupBox_30->hide();
+		ui->groupBox_29->hide();
+
+		/// main loop configuration 
 		ui->groupBox_12->show();
 	}
 
@@ -2771,15 +2848,21 @@ onCalibrationButtonPressed()
 	if (!LOOP.isCal) 
 	{
 		stopCalibration();
+		ui->pushButton->setEnabled(true);
 		return;
 	}
 
 	/// update button label
     ui->pushButton_4->setText("S T O P");
-    delay();
+	ui->pushButton->setEnabled(false);
+    //delay();
 
     /// scan calibration variables
-    if (!prepareCalibration()) return;
+    if (!prepareCalibration()) 
+	{
+		ui->pushButton->setEnabled(true);
+		return;
+	}
 	
     /// LOOP calibration on
     if (LOOP.isCal)
@@ -2976,10 +3059,12 @@ readMasterPipe()
 
 	/// master temp
 	LOOP.masterTemp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+	ui->lineEdit_29->setText(QString::number(LOOP.masterTemp));
     QThread::msleep(SLEEP_TIME);
 
 	/// master freq
 	LOOP.masterFreq = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+	ui->lineEdit_30->setText(QString::number(LOOP.masterFreq));
     QThread::msleep(SLEEP_TIME);
 }
 
@@ -3194,16 +3279,15 @@ void
 MainWindow::
 runInjection()
 {
-	readMasterPipe(); /// read master pipe no matter what
-
 	static double injectionTime = 0;
 	static double totalInjectionTime = 0;
 	static double accumulatedInjectionTime_prev = 0;
 	static double correctedWatercut = 0;
 	static double measuredWatercut = 0;
    	static double totalInjectionVolume = 0;
-
    	QString data_stream;
+
+	readMasterPipe(); /// read master pipe no matter what
 
 	if ((QFileInfo(PIPE[0].file).fileName() == "CALIBRAT.LCI") || 
    	 	(QFileInfo(PIPE[1].file).fileName() == "CALIBRAT.LCI") || 
@@ -3239,6 +3323,8 @@ runInjection()
 
    		if (LOOP.oilRunStop->text().toDouble() > LOOP.watercut)
    		{
+			updateLoopStatus(LOOP.watercut, 0, injectionTime, injectionTime*LOOP.injectionWaterPumpRate/60);
+
 			//////////////////////////////
 			//// READ DATA AND UPDATE FILE 
 			//////////////////////////////
@@ -3307,9 +3393,6 @@ runInjection()
 				totalInjectionTime += injectionTime;
 				totalInjectionVolume = totalInjectionTime*LOOP.injectionWaterPumpRate/60;
 				accumulatedInjectionTime_prev = accumulatedInjectionTime;
-
-				/// update calibration status
-				updateLoopStatus(LOOP.watercut, 0, injectionTime, injectionTime*LOOP.injectionWaterPumpRate/60);
 
 				/// validate injection time
 				if (injectionTime > LOOP.maxInjectionWater)
@@ -3528,9 +3611,6 @@ runInjection()
 			totalInjectionTime += injectionTime;
 			totalInjectionVolume = totalInjectionTime*LOOP.injectionWaterPumpRate/60;
 			accumulatedInjectionTime_prev = accumulatedInjectionTime;
-
-			/// update calibration status
-			updateLoopStatus(LOOP.watercut, 0, injectionTime, injectionTime*LOOP.injectionWaterPumpRate/60);
 
 			/// validate injection time
 			if (injectionTime > LOOP.maxInjectionWater)
@@ -3808,15 +3888,32 @@ onUpdateRegisters(const bool isEEA)
         LOOP.ID_FREQ = 19;
         LOOP.ID_OIL_RP = 61;
     }
-	/// master pipe
-	LOOP.ID_MASTER_WATERCUT = 11;
+
+	/// master pipe EEA
+	LOOP.ID_MASTER_WATERCUT = 29;
 	LOOP.ID_MASTER_TEMPERATURE = 15; 
 	LOOP.ID_MASTER_SALINITY = 21;
 	LOOP.ID_MASTER_OIL_ADJUST = 23;
 	LOOP.ID_MASTER_OIL_RP = 115; 
 	LOOP.ID_MASTER_FREQ = 111; 
+/*
+	/// master pipe RAZOR
+	LOOP.ID_MASTER_WATERCUT = 3;
+	LOOP.ID_MASTER_TEMPERATURE = 33; 
+	LOOP.ID_MASTER_SALINITY = 9;
+	LOOP.ID_MASTER_OIL_ADJUST = 15;
+	LOOP.ID_MASTER_OIL_RP = 61; 
+	LOOP.ID_MASTER_FREQ = 19; 
+*/
 }
 
+
+void
+MainWindow::
+onTestMasterPipePressed()
+{
+	readMasterPipe();
+}
 
 void
 MainWindow::

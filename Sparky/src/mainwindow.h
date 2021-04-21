@@ -445,6 +445,7 @@ private slots:
 	void updateFileList(const QString, const int, const int);
 	void createInjectionFile(const int, const int, const QString, const QString, const QString, const QString);
     void onCalibrationButtonPressed();
+    void onTestMasterPipePressed();
     void onRtuPortActive(bool);
     void changeSerialPort(int);
     void createTempRunFile(const int, const QString, const QString, const QString, const int);
