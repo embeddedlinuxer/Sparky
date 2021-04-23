@@ -23,6 +23,7 @@
 #include "qextserialenumerator.h"
 
 QT_CHARTS_USE_NAMESPACE
+#define MAX_PHASE_CHECKING		5
 
 const int DataTypeColumn = 0;
 const int AddrColumn = 1;
@@ -65,6 +66,7 @@ MainWindow::MainWindow( QWidget * _parent ) :
 	ui->groupBox_31->hide();
 	ui->groupBox_30->hide();
 	ui->groupBox_29->hide();
+	onActionStop();
 
     ui->regTable->setColumnWidth( 0, 150 );
     m_statusInd = new QWidget;
@@ -152,9 +154,9 @@ initializeToolbarIcons() {
     ui->toolBar->addAction(ui->actionSettings);
 
     ui->toolBar->addSeparator();
-    ui->toolBar->addAction(ui->actionDisconnect);
-    //ui->actionDisconnect->setEnabled(TRUE);
-
+    ui->toolBar->addAction(ui->actionStart);
+    ui->toolBar->addAction(ui->actionStop);
+	ui->actionStop->setVisible(false);
 }
 
 void
@@ -856,9 +858,9 @@ connectToolbar()
 {
     connect(ui->actionSave, SIGNAL(triggered()),this,SLOT(saveCsvFile()));
     connect(ui->actionOpen, SIGNAL(triggered()),this,SLOT(loadCsvFile()));
-    connect(ui->actionDisconnect, SIGNAL(triggered()),this,SLOT(onActionDisconnect()));
-    connect(ui->actionConnect, SIGNAL(triggered()),this,SLOT(onActionConnect()));
     connect(ui->actionSettings, SIGNAL(triggered()),this,SLOT(onActionSettings()));
+    connect(ui->actionStart, SIGNAL(triggered()),this,SLOT(onActionStart()));
+    connect(ui->actionStop, SIGNAL(triggered()),this,SLOT(onActionStop()));
 
     /// injection pump rates
     connect(ui->actionInjection_Pump_Rates, SIGNAL(triggered()),this,SLOT(injectionPumpRates()));
@@ -942,7 +944,6 @@ void
 MainWindow::
 connectCalibrationControls()
 {
-    connect(ui->pushButton_4, SIGNAL(pressed()),this, SLOT(onCalibrationButtonPressed()));
     connect(ui->pushButton, SIGNAL(pressed()),this, SLOT(onTestMasterPipePressed()));
 }
 
@@ -1024,6 +1025,7 @@ readJsonConfigFile()
 	LOOP.zTemp = json[LOOP_Z_TEMP].toDouble();
 	LOOP.intervalSmallPump = json[LOOP_INTERVAL_SMALL_PUMP].toDouble();
 	LOOP.intervalBigPump = json[LOOP_INTERVAL_BIG_PUMP].toDouble();
+	LOOP.intervalOilPump = json[LOOP_INTERVAL_OIL_PUMP].toDouble();
 	LOOP.loopNumber = json[LOOP_NUMBER].toInt();
 	LOOP.masterMin = json[LOOP_MASTER_MIN].toDouble();
 	LOOP.masterMax = json[LOOP_MASTER_MAX].toDouble();
@@ -1051,6 +1053,7 @@ readJsonConfigFile()
 
 	ui->lineEdit_73->setText(QString::number(LOOP.intervalSmallPump));
 	ui->lineEdit_74->setText(QString::number(LOOP.intervalBigPump));
+	ui->lineEdit_79->setText(QString::number(LOOP.intervalOilPump));
 
 	ui->lineEdit_75->setText(QString::number(LOOP.masterMin));
 	ui->lineEdit_76->setText(QString::number(LOOP.masterMax));
@@ -1092,6 +1095,7 @@ writeJsonConfigFile(void)
 
 	LOOP.intervalSmallPump = ui->lineEdit_73->text().toDouble();
 	LOOP.intervalBigPump = ui->lineEdit_74->text().toDouble();
+	LOOP.intervalOilPump = ui->lineEdit_79->text().toDouble();
 
 	LOOP.masterMin = ui->lineEdit_75->text().toDouble();
 	LOOP.masterMax =  ui->lineEdit_76->text().toDouble();
@@ -1114,6 +1118,7 @@ writeJsonConfigFile(void)
 	json[LOOP_Z_TEMP] = QString::number(LOOP.zTemp);
 	json[LOOP_INTERVAL_SMALL_PUMP] = QString::number(LOOP.intervalSmallPump);
 	json[LOOP_INTERVAL_BIG_PUMP] = QString::number(LOOP.intervalBigPump);
+	json[LOOP_INTERVAL_OIL_PUMP] = QString::number(LOOP.intervalOilPump);
 	json[LOOP_NUMBER] = QString::number(LOOP.loopNumber);
 	json[LOOP_MASTER_MIN] = QString::number(LOOP.masterMin);
 	json[LOOP_MASTER_MAX] = QString::number(LOOP.masterMax);
@@ -1504,6 +1509,10 @@ sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int addr
             }
         }
     }
+	else
+	{
+		isModbusTransmissionFailed = true;
+	}
 }
 
 
@@ -1541,25 +1550,28 @@ saveCsvFile()
 
 void
 MainWindow::
-onActionDisconnect()
+onActionStart()
 {
-	ui->toolBar->addAction(ui->actionConnect);
-    ui->actionDisconnect->setVisible(false);
-    ui->actionConnect->setEnabled(TRUE);
-    ui->actionConnect->setVisible(true);
-	ui->groupBox_18->setChecked(true);
-}
+    ui->actionStop->setVisible(true);
+    ui->actionStart->setVisible(false);
+	ui->pushButton->setEnabled(false);
 
+	/// start calibration
+	onCalibrationButtonPressed();
+}
 
 void
 MainWindow::
-onActionConnect()
+onActionStop()
 {
-	ui->toolBar->addAction(ui->actionDisconnect);
-    ui->actionDisconnect->setEnabled(TRUE);
-    ui->actionDisconnect->setVisible(true);
-    ui->actionConnect->setVisible(false);
-	ui->groupBox_18->setChecked(false);
+    ui->actionStart->setVisible(true);
+    ui->actionStop->setVisible(false);
+	ui->pushButton->setEnabled(true);
+
+	LOOP.runMode = STOP_MODE;
+
+	/// stop calibration
+	stopCalibration();
 }
 
 void
@@ -1900,6 +1912,38 @@ onDownloadEquation()
      }
 }
 
+bool
+MainWindow::
+informUser(const QString t1, const QString t2, const QString t3 = "")
+{
+    QMessageBox msgBox;
+    msgBox.setWindowTitle(t1);
+    msgBox.setText(t2);
+    msgBox.setInformativeText(t3);
+    msgBox.setStandardButtons(QMessageBox::Ok);
+    int ret = msgBox.exec();
+    switch (ret) {
+        case QMessageBox::Ok: return true;
+        default: return true;
+    }
+}
+
+bool
+MainWindow::
+isUserInputYes(const QString t1, const QString t2)
+{
+    QMessageBox msgBox;
+    msgBox.setText(t1);
+    msgBox.setInformativeText(t2);
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Yes);
+    int ret = msgBox.exec();
+    switch (ret) {
+        case QMessageBox::Yes: return true;
+        case QMessageBox::Cancel: return false;
+        default: return true;
+    }
+}
 
 
 void
@@ -2619,41 +2663,6 @@ createTempRunFile(const int sn, const QString startValue, const QString stopValu
 }
 
 
-bool
-MainWindow::
-displayMessage(const QString windowTitle, const QString line1, const QString line2 = "")
-{
-    QMessageBox msgBox;
-    msgBox.setWindowTitle(windowTitle);
-    msgBox.setText(line1);
-    msgBox.setInformativeText(line2);
-    msgBox.setStandardButtons(QMessageBox::Yes);
-    int msgAnswer = msgBox.exec();
-    switch (msgAnswer) {
-        case QMessageBox::Yes: return 1;
-        default: return 0;
-    }
-}
-
-
-bool
-MainWindow::
-getUserInputMessage(const QString msg_0, const QString msg_1, const QString msg_2)
-{
-    QMessageBox msgBox;
-    msgBox.setWindowTitle(msg_0);
-    msgBox.setText(msg_1);
-    msgBox.setInformativeText(msg_2);
-    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
-    int msgAnswer = msgBox.exec();
-    switch (msgAnswer) {
-        case QMessageBox::Ok: return true;
-        case QMessageBox::Cancel: return false; 
-        default: return true;
-    }
-}
-
-
 void
 MainWindow::
 setProductAndCalibrationMode()
@@ -2727,7 +2736,7 @@ validateSerialNumber(modbus_t * serialModbus)
 			/// verify if serial number matches with pipe
    			if (*dest16 != PIPE[pipe].slave->text().toInt()) 
 			{
-   				displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" PIPE ")+QString::number(pipe + 1),"Invalid Serial Port!");
+   				informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" PIPE ")+QString::number(pipe + 1),"Invalid Serial Port!");
 
 				/// lock FCT registers
    				modbus_write_register(serialModbus,999,0);
@@ -2772,16 +2781,16 @@ prepareCalibration()
 
 	if (PIPE[0].slave->text().isEmpty() && PIPE[1].slave->text().isEmpty() && PIPE[2].slave->text().isEmpty()) 
 	{
-		stopCalibration();
-       	displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber),"No valid serial number exists!");
+		onActionStop();
+       	informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber),"No valid serial number exists!");
 		return false;
 	}
 
 	/// check loop volume
 	if (LOOP.loopVolume->text().toDouble() < 1)
 	{
-		stopCalibration();
-       	displayMessage(QString("LOOP ")+QString::number(0 + 1),QString("LOOP ")+QString::number(0 + 1),"No valid loop volume exists!");
+		onActionStop();
+       	informUser(QString("LOOP ")+QString::number(0 + 1),QString("LOOP ")+QString::number(0 + 1),"No valid loop volume exists!");
 		return false;
 	}
 
@@ -2789,8 +2798,8 @@ prepareCalibration()
    	if (LOOP.modbus == NULL)
    	{
        	/// update tab icon
-		stopCalibration();
-       	displayMessage(QString("LOOP "),QString("LOOP "),"Bad Serial Connection");
+		onActionStop();
+       	informUser(QString("LOOP "),QString("LOOP "),"Bad Serial Connection");
        	return false;
    	}
 
@@ -2798,12 +2807,9 @@ prepareCalibration()
 	if (!validateSerialNumber(LOOP.serialModbus))
 	{
 		/// stop calibration
-		stopCalibration();
+		onActionStop();
        	return false;
 	}
-
-	/// update button label
-	ui->pushButton_4->setText("S T O P");
 
 	/// reset initial triggers
 	LOOP.isAMB = true;
@@ -2847,22 +2853,12 @@ onCalibrationButtonPressed()
 
 	if (!LOOP.isCal) 
 	{
-		stopCalibration();
-		ui->pushButton->setEnabled(true);
+		onActionStop();
 		return;
 	}
-
-	/// update button label
-    ui->pushButton_4->setText("S T O P");
-	ui->pushButton->setEnabled(false);
-    //delay();
 
     /// scan calibration variables
-    if (!prepareCalibration()) 
-	{
-		ui->pushButton->setEnabled(true);
-		return;
-	}
+    if (!prepareCalibration()) return;
 	
     /// LOOP calibration on
     if (LOOP.isCal)
@@ -2871,6 +2867,7 @@ onCalibrationButtonPressed()
 		{
 			if (PIPE[pipe].status == ENABLED)
 			{
+				PIPE[pipe].isStartFreq = true;
       			QDir dir;
        			int fileCounter = 2;
 
@@ -2885,9 +2882,12 @@ onCalibrationButtonPressed()
                    			PIPE[pipe].mainDirPath += "_"+QString::number(fileCounter);
                    			dir.mkpath(PIPE[pipe].mainDirPath);
 
-							/// update first file path
-							prepareForNextFile(pipe, QString("AMB").append("_").append(QString::number(LOOP.minRefTemp)).append(LOOP.filExt));
-
+							if ((LOOP.mode == LOW) || !LOOP.isEEA)
+							{
+								/// update first file path
+								prepareForNextFile(pipe, QString("AMB").append("_").append(QString::number(LOOP.minRefTemp)).append(LOOP.filExt));
+								LOOP.runMode = TEMP_RUN_MODE;
+							}
                    			break;
                			}
                			else fileCounter++;
@@ -2897,12 +2897,19 @@ onCalibrationButtonPressed()
     	}
 
 		/// start calibration
-        ((LOOP.mode == LOW) || !LOOP.isEEA) ? QTimer::singleShot(0, this, &MainWindow::runTempRun) : QTimer::singleShot(0, this, &MainWindow::runInjection); /// start immediately 
+		while (LOOP.isCal)
+		{
+       		if (LOOP.runMode == TEMP_RUN_MODE) runTempRun();
+			else if (LOOP.runMode == INJECTION_MODE) runInjection();
+			else if (!LOOP.isCal) return;
+
+			QThread::sleep(LOOP.xDelay); /// 10 second interval 
+		}
 	}
 	else
     {
-		stopCalibration();
-      	displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration cancelled!");
+		onActionStop();
+      	informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration cancelled!");
 	}
 }		
 
@@ -2911,8 +2918,6 @@ void
 MainWindow::
 stopCalibration()
 {
-	ui->pushButton_4->setText("S T A R T");
-
 	int i;
 
     LOOP.isCal = false;
@@ -2952,6 +2957,7 @@ readPipe(const int pipe, const bool isStability)
  
     /// get temperature
     PIPE[pipe].temperature = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    QThread::msleep(SLEEP_TIME);
 
 	if (isStability)
 	{
@@ -2965,7 +2971,7 @@ readPipe(const int pipe, const bool isStability)
 		}
 		else PIPE[pipe].tempStability = 5;
 
-    	updatePipeStability(T_BAR, pipe, PIPE[pipe].tempStability*20);
+    	if (!isModbusTransmissionFailed) updatePipeStability(T_BAR, pipe, PIPE[pipe].tempStability*20);
 	}
 	else
 	{
@@ -2976,10 +2982,9 @@ readPipe(const int pipe, const bool isStability)
 		updatePipeStability(T_BAR, pipe, 0);
 	}
 
-    QThread::msleep(SLEEP_TIME);
-
     /// get frequency
     PIPE[pipe].frequency = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    QThread::msleep(SLEEP_TIME);
 
 	if (isStability)
 	{
@@ -2993,7 +2998,7 @@ readPipe(const int pipe, const bool isStability)
 		}
 		else PIPE[pipe].freqStability = 5;
 
-    	updatePipeStability(F_BAR, pipe, PIPE[pipe].freqStability*20);
+    	if (!isModbusTransmissionFailed) updatePipeStability(F_BAR, pipe, PIPE[pipe].freqStability*20);
 	}
 	else
 	{
@@ -3003,8 +3008,6 @@ readPipe(const int pipe, const bool isStability)
 		updatePipeStability(F_BAR, pipe, 0);
 		updatePipeStability(T_BAR, pipe, 0);
 	}
-
-    QThread::msleep(SLEEP_TIME);
 
     /// get oil_rp 
     PIPE[pipe].oilrp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_OIL_RP, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
@@ -3040,18 +3043,18 @@ readMasterPipe()
  
     /// get watercut
     LOOP.masterWatercut = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_WATERCUT, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-	ui->lineEdit_20->setText(QString::number(LOOP.masterWatercut));
     QThread::msleep(SLEEP_TIME);
+	if (!isModbusTransmissionFailed) ui->lineEdit_20->setText(QString::number(LOOP.masterWatercut));
 
 	/// get salinity
     LOOP.masterSalinity = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_SALINITY, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-	ui->lineEdit_22->setText(QString::number(LOOP.masterSalinity));
     QThread::msleep(SLEEP_TIME);
+	if (!isModbusTransmissionFailed) ui->lineEdit_22->setText(QString::number(LOOP.masterSalinity));
 
 	/// get oil adjust 
     LOOP.masterOilAdj = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_OIL_ADJUST, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-	ui->lineEdit_21->setText(QString::number(LOOP.masterOilAdj));
     QThread::msleep(SLEEP_TIME);
+	if (!isModbusTransmissionFailed) ui->lineEdit_21->setText(QString::number(LOOP.masterOilAdj));
    
 	/// master oil rp 
 	LOOP.masterOilRp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_OIL_RP, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
@@ -3059,13 +3062,19 @@ readMasterPipe()
 
 	/// master temp
 	LOOP.masterTemp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-	ui->lineEdit_29->setText(QString::number(LOOP.masterTemp));
     QThread::msleep(SLEEP_TIME);
+	if (!isModbusTransmissionFailed) ui->lineEdit_29->setText(QString::number(LOOP.masterTemp));
 
 	/// master freq
 	LOOP.masterFreq = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-	ui->lineEdit_30->setText(QString::number(LOOP.masterFreq));
     QThread::msleep(SLEEP_TIME);
+	if (!isModbusTransmissionFailed) ui->lineEdit_30->setText(QString::number(LOOP.masterFreq));
+
+	/// master phase
+	LOOP.masterPhase = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_PHASE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    QThread::msleep(SLEEP_TIME);
+	if (!isModbusTransmissionFailed) ui->lineEdit_30->setText(QString::number(LOOP.masterPhase));
+
 }
 
 
@@ -3093,31 +3102,44 @@ runTempRun()
    				LOOP.operatorName = QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Operator's Name.")), QLineEdit::Normal," ", &ok);
    				LOOP.oilRunStart->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Measured Initial Watercut.")), QLineEdit::Normal,"0.0", &ok));
 				LOOP.watercut = LOOP.oilRunStart->text().toDouble();
-   				displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ").append(QString::number(LOOP.loopNumber)).append("                             "),"Fill The Water Container To The Mark.");
+   				if (!isUserInputYes(QString("LOOP ")+QString::number(LOOP.loopNumber),"Fill The Water Container To The Mark."))
+				{
+					onActionStop();
+					return;
+				}
 
 				/// master pipe validation 
 				if (LOOP.isMaster)
 				{
 					if (LOOP.masterWatercut > LOOP.masterMax) 
 					{
-						displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("MASTER PIPE ")+QString::number(LOOP.loopNumber),QString(" Raw watercut value is greater than ")+QString::number(LOOP.masterMax));
-						return;
+						if (!isUserInputYes(QString("Master Pipe Raw watercut Value Is Greater Than ")+QString::number(LOOP.masterMax), "Do You Want To Continue?"))
+						{
+							onActionStop();
+							return;
+						}
 					}
 					if (LOOP.masterWatercut < LOOP.masterMin) 
 					{
-						displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("MASTER PIPE ")+QString::number(LOOP.loopNumber),QString(" Raw watercut value is less than ")+QString::number(LOOP.masterMin));
-						return;
+						if (!isUserInputYes(QString("Master Pipe Raw watercut Value Is Less Than ")+QString::number(LOOP.masterMin), "Do You Want To Continue?"))
+						{
+							onActionStop();
+							return;
+						}
 					}
 					if (abs(LOOP.masterWatercut - LOOP.oilRunStart->text().toDouble()) > LOOP.masterDelta) 
 					{
-						if (!displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("MASTER PIPE ")+QString::number(LOOP.loopNumber)+QString(" The difference between master watercut and measured initial watercut is greater than ")+QString::number(LOOP.masterMax),QString("Do you want to continue?"))) return;
+						if (!isUserInputYes(QString("The difference between master watercut and measured initial watercut is greater than ")+QString::number(LOOP.masterDelta), "Do You Want To Continue?"))
+						{
+							onActionStop();
+							return;
+						}
 					}
 				}
 
-       			/// popup question
-   				if (!getUserInputMessage(QString("LOOP ")+QString::number(LOOP.loopNumber), QString("Set The Heat Exchanger Temperature"), QString::number(LOOP.minRefTemp).append("°C"))) 
+				if (!isUserInputYes(QString("Set The Heat Exchanger Temperature"), QString::number(LOOP.minRefTemp).append("°C")))
 				{
-					stopCalibration();
+					onActionStop();
 					return;
 				}
 
@@ -3138,8 +3160,9 @@ runTempRun()
            		if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
            		{
 					/// read data
-					(abs(LOOP.minRefTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
-					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,8,'f',2,' ');
+					if (abs(LOOP.minRefTemp - PIPE[pipe].temperature) < 2.0) readPipe(pipe, STABILITY_CHECK); 
+					else readPipe(pipe, NO_STABILITY_CHECK);
+					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
 
 					/// write to file
                		writeToCalFile(pipe, data_stream);
@@ -3162,10 +3185,9 @@ runTempRun()
 			{
 				LOOP.isMinRef = false;
 
-				/// popup question
-				if (!getUserInputMessage(QString("LOOP ")+QString::number(LOOP.loopNumber), QString("Set Heat Exchanger Temperature"),QString::number(LOOP.maxRefTemp).append("°C"))) 
+				if (!isUserInputYes(QString("Set The Heat Exchanger Temperature"), QString::number(LOOP.maxRefTemp).append("°C")))
 				{
-					stopCalibration();
+					onActionStop();
 					return;
 				}
 
@@ -3187,7 +3209,7 @@ runTempRun()
 					/// read data
 					(abs(LOOP.maxRefTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
 					LOOP.watercut = LOOP.oilRunStart->text().toDouble();
-					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,8,'f',2,' ');
+					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
 
 					/// write to file
    	            	writeToCalFile(pipe, data_stream);
@@ -3210,9 +3232,9 @@ runTempRun()
 			{
 				LOOP.isMaxRef = false;
 
-				if (!getUserInputMessage(QString("LOOP ")+QString::number(LOOP.loopNumber), QString("Set Heat Exchanger Temperature"),QString::number(LOOP.injectionTemp).append("°C"))) 
+				if (!isUserInputYes(QString("Set The Heat Exchanger Temperature"), QString::number(LOOP.injectionTemp).append("°C")))
 				{
-					stopCalibration();
+					onActionStop();
 					return;
 				}
 
@@ -3233,7 +3255,7 @@ runTempRun()
        			{
 					/// read data
 					(abs(LOOP.injectionTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
-					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,8,'f',2,' ');
+					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
 
 					/// write to file
            			writeToCalFile(pipe, data_stream);
@@ -3253,7 +3275,7 @@ runTempRun()
 						{
 							if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) 
 							{
-								QTimer::singleShot(LOOP.xDelay*10, this, &MainWindow::runInjection);
+								LOOP.runMode = INJECTION_MODE;
 								return;
 							}
 						}
@@ -3261,16 +3283,6 @@ runTempRun()
        			}
    			}
 		}
-	}
-	
-    if (LOOP.isCal && (PIPE[0].checkBox->isChecked() || PIPE[1].checkBox->isChecked() || PIPE[2].checkBox->isChecked())) 
-	{
-		QTimer::singleShot(LOOP.xDelay*1000, this, &MainWindow::runTempRun); /// xDelay * 1000 = xDelay seconds
-	}
-	else
-	{
-		stopCalibration();
-      	displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration cancelled!");
 	}
 }
 
@@ -3305,9 +3317,15 @@ runInjection()
 		if (LOOP.isInjection)
 		{
 			bool ok;
-   			displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("Water Injection Bucket:"),QString("Please make sure there is enough water in the water injection bucket"));
+   			if (!isUserInputYes(QString("LOOP ")+QString::number(LOOP.loopNumber),"Please make sure there is enough water in the water injection bucket"))
+			{
+				onActionStop();
+				return;
+			}
+
        		LOOP.oilRunStart->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber),tr(qPrintable("Enter Measured Initial Watercut")), QLineEdit::Normal,"0.0", &ok));
 			LOOP.watercut = LOOP.oilRunStart->text().toDouble();
+			LOOP.oilPhaseInjectCounter = 0;
 
 			for (int pipe = 0; pipe < 3; pipe++) 
 			{
@@ -3321,7 +3339,7 @@ runInjection()
 			}
 		}
 
-   		if (LOOP.oilRunStop->text().toDouble() > LOOP.watercut)
+   		if ((LOOP.oilRunStop->text().toDouble() >= LOOP.watercut) && (LOOP.oilPhaseInjectCounter <= MAX_PHASE_CHECKING))
    		{
 			updateLoopStatus(LOOP.watercut, 0, injectionTime, injectionTime*LOOP.injectionWaterPumpRate/60);
 
@@ -3334,7 +3352,8 @@ runInjection()
 				{
 					/// read data
 					readPipe(pipe, NO_STABILITY_CHECK);
-					data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,8,'f',2,' ');
+					if (LOOP.isMaster) data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.masterWatercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
+					else data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
 
 					/// write to calibration file
            			writeToCalFile(pipe, data_stream);
@@ -3355,8 +3374,23 @@ runInjection()
 			{
 				int masterInjectionStartTime = PIPE[0].etimer->elapsed()/1000;
 				
-				/// start injection	
-				inject(COIL_WATER_PUMP,true);
+				/// start injection	upon master pipe phase
+				if (LOOP.masterPhase == PHASE_OIL) 
+				{
+					inject(COIL_WATER_PUMP,true);
+					LOOP.oilPhaseInjectCounter = 0;
+				}
+				else 
+				{
+					inject(COIL_WATER_PUMP,false);
+					LOOP.oilPhaseInjectCounter++;
+				
+					if (LOOP.oilPhaseInjectCounter > MAX_PHASE_CHECKING)
+					{
+      					if (LOOP.masterPhase == PHASE_WATER) informUser("Master Piple Is In Water Phase Now", QString("Watercut ").append(QString::number(LOOP.masterWatercut)).append(" %"));
+      					else informUser("Master Piple Is ERROR Phase",QString("Phase Value Is ").append(QString::number(LOOP.masterPhase)));
+					}
+				}
 
 				while (LOOP.masterWatercut < LOOP.watercut)
 				{
@@ -3365,10 +3399,13 @@ runInjection()
 					/// validate injection time
 					if ((masterInjectionTime - masterInjectionStartTime) > LOOP.maxInjectionWater)
 					{
-						/// stop water injection
-						inject(COIL_WATER_PUMP,false);
-   						displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("Injection Time: ")+QString::number(masterInjectionTime - masterInjectionStartTime),QString("Injection Time Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater));
-						return;
+						/// stop water injection?
+   						if (!isUserInputYes(QString("Injection Time ")+QString::number(masterInjectionTime - masterInjectionStartTime)+QString(" Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater), "Do You Want To Continue?"))
+						{
+							inject(COIL_WATER_PUMP,false);
+							onActionStop();
+							return;
+						}
 					}
 
 					readMasterPipe();
@@ -3378,6 +3415,7 @@ runInjection()
 				inject(COIL_WATER_PUMP,false);
 				int masterInjectionEndTime = PIPE[0].etimer->elapsed()/1000;
 				totalInjectionVolume += (masterInjectionEndTime-masterInjectionStartTime)*LOOP.injectionWaterPumpRate/60;
+				totalInjectionTime += masterInjectionEndTime-masterInjectionStartTime;
 
 				/// set next watercut
 				(LOOP.mode == LOW) ? LOOP.watercut += LOOP.intervalSmallPump : LOOP.watercut += LOOP.intervalBigPump; 
@@ -3397,8 +3435,12 @@ runInjection()
 				/// validate injection time
 				if (injectionTime > LOOP.maxInjectionWater)
 				{
-   					displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("Injection Time: ")+QString::number(injectionTime),QString("Injection Time Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater));
-					return;
+					/// stop water injection?
+   					if (!isUserInputYes(QString("Injection Time ")+QString::number(injectionTime)+QString(" Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater), "Do You Want To Continue?"))
+					{
+						onActionStop();
+						return;
+					}
 				}
 
 				/// inject water to the pipe for "injectionTime" seconds
@@ -3420,7 +3462,12 @@ runInjection()
 			{
 				if (abs(LOOP.masterWatercut - measuredWatercut) > LOOP.masterDeltaFinal) 
 				{
-					if (!displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("MASTER PIPE ")+QString::number(LOOP.loopNumber)+QString(" Difference between measured watercut and master watercut is greater than ")+QString::number(LOOP.masterDeltaFinal),QString("Do you want to continue?"))) return;
+					/// stop water injection?
+   					if (!isUserInputYes(QString("MASTER PIPE ")+QString::number(LOOP.loopNumber)+QString(" Difference between measured watercut and master watercut is greater than ")+QString::number(LOOP.masterDeltaFinal), "Do You Want To Continue?"))
+					{
+						onActionStop();
+						return;
+					}
 				}
 			}
 
@@ -3451,8 +3498,8 @@ runInjection()
 			if (LOOP.mode != LOW) 
 			{
 				/// finish calibration
-				stopCalibration();
-      			displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration has finished successfully.");
+      			informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),("                                    "),"Calibration has finished successfully.");
+				onActionStop();
 				return;
 			}
 					
@@ -3532,7 +3579,7 @@ runInjection()
 			}
 
 			/// prepare for ROLLOVER.LCR	
-           	displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Please Switch The Injection Pump.");
+           	informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Please Switch The Injection Pump.");
 			LOOP.watercut += LOOP.intervalBigPump;
 			for (int pipe = 0; pipe < 3; pipe++) 
 			{
@@ -3564,7 +3611,7 @@ runInjection()
 				else PIPE[pipe].rolloverTracker = 0;
 					
 				/// read data
-				data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(0,8,'f',2,' ');
+				data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
 
    				/// create a new file if needed
   				if (!QFileInfo(PIPE[pipe].file).exists()) 
@@ -3581,6 +3628,7 @@ runInjection()
 		if (LOOP.isMaster)
 		{
 			int masterInjectionStartTime = PIPE[0].etimer->elapsed()/1000;
+
 			while (LOOP.masterWatercut < LOOP.watercut)
 			{
 				int masterInjectionTime = PIPE[0].etimer->elapsed()/1000;
@@ -3591,9 +3639,12 @@ runInjection()
 				if ((masterInjectionTime - masterInjectionStartTime) > LOOP.maxInjectionWater)
 				{
 					/// stop water injection
-					inject(COIL_WATER_PUMP,false);
-					displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("Injection Time: ")+QString::number(masterInjectionTime - masterInjectionStartTime),QString("Injection Time Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater));
-					return;
+					if (!isUserInputYes(QString("Injection Time")+QString::number(masterInjectionTime - masterInjectionStartTime)+QString(" Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater), "Do You Want To Continue?"))
+					{
+						inject(COIL_WATER_PUMP,false);
+						onActionStop();
+						return;
+					}
 				}
 			}
 
@@ -3615,8 +3666,11 @@ runInjection()
 			/// validate injection time
 			if (injectionTime > LOOP.maxInjectionWater)
 			{
-				displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("Injection Time: ")+QString::number(injectionTime),QString("Injection Time Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater));
-				return;
+				if (!isUserInputYes(QString("Injection Time ")+QString::number(injectionTime)+QString(" Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater), "Do You Want To Continue?"))
+				{
+					onActionStop();
+					return;
+				}
 			}
 
 			/// inject water to the pipe for "injectionTime" seconds
@@ -3650,17 +3704,12 @@ runInjection()
 		}
 
 		/// finish calibration
-		stopCalibration();
-      	displayMessage(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration has finished successfully.");
-
-		return;
+		LOOP.runMode = STOP_MODE;
+      	informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration has finished successfully.");
+		onActionStop();
    }
 
-    ///////////////////////////////////////////////////////////////////
-    /// restart singleshot timer. otherwise, calibration will be ended
-    ///////////////////////////////////////////////////////////////////
-            
-    if (LOOP.isCal && (PIPE[0].checkBox->isChecked() || PIPE[1].checkBox->isChecked() || PIPE[2].checkBox->isChecked())) QTimer::singleShot(LOOP.xDelay*1000, this, &MainWindow::runInjection); /// xDelay * 1000 = xDelay seconds
+	return;
 }
 
 
@@ -3699,6 +3748,7 @@ writeToCalFile(int pipe, QString data_stream)
     PIPE[pipe].file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
     stream << data_stream << '\n' ;
     PIPE[pipe].file.close();
+   	QThread::msleep(SLEEP_TIME);
 }
 
 
@@ -3896,6 +3946,7 @@ onUpdateRegisters(const bool isEEA)
 	LOOP.ID_MASTER_OIL_ADJUST = 23;
 	LOOP.ID_MASTER_OIL_RP = 115; 
 	LOOP.ID_MASTER_FREQ = 111; 
+	LOOP.ID_MASTER_PHASE = 17; 
 /*
 	/// master pipe RAZOR
 	LOOP.ID_MASTER_WATERCUT = 3;
@@ -3930,13 +3981,14 @@ void
 MainWindow::
 updatePipeStatus(const int pipe, const double watercut, const double startfreq, const double freq, const double temp, const double rp)
 {
-	if (PIPE[pipe].status == ENABLED)
+	if ((PIPE[pipe].status == ENABLED) && (!isModbusTransmissionFailed))
 	{
     	PIPE[pipe].watercut->setText(QString::number(watercut));
-    	PIPE[pipe].startFreq->setText(QString::number(startfreq));
+    	if (PIPE[pipe].isStartFreq) PIPE[pipe].startFreq->setText(QString::number(freq));
     	PIPE[pipe].freq->setText(QString::number(freq));
     	PIPE[pipe].temp->setText(QString::number(temp));
     	PIPE[pipe].reflectedPower->setText(QString::number(rp));
+		PIPE[pipe].isStartFreq = false;
 	}
 } 
 
@@ -3945,8 +3997,11 @@ void
 MainWindow::
 updateLoopStatus(const double watercut, const double salinity, const double injectionTime, const double injectionVol)
 {
-	ui->lineEdit_26->setText(QString::number(watercut));
-	ui->lineEdit_25->setText(QString::number(salinity));
-	ui->lineEdit_24->setText(QString::number(injectionTime));
-	ui->lineEdit_23->setText(QString::number(injectionVol));
+	if (!isModbusTransmissionFailed)
+	{
+		ui->lineEdit_26->setText(QString::number(watercut));
+		ui->lineEdit_25->setText(QString::number(salinity));
+		ui->lineEdit_24->setText(QString::number(injectionTime));
+		ui->lineEdit_23->setText(QString::number(injectionVol));
+	}
 }

@@ -57,3 +57,5 @@ RESOURCES += data/sparky.qrc
 RC_FILE += sparky.rc
 
 include(deployment.pri)
+
+DISTFILES +=
