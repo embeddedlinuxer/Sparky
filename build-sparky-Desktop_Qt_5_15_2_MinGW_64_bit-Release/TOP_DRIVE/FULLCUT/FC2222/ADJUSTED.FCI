@@ -1,7 +1,0 @@
-EEA INJECTION FILE
-SN2222 | FULLCUT | Sat Dec 19 18:09:57 2020 | Sparky 0.0.7
-INJECTION:  99 % to 60 % Watercut at 0.02 % Salinity
-
-Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection
-Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Comment
-========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== ============

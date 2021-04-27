@@ -1,8 +1,0 @@
-EEA INJECTION FILE
-SN8843 | LOWCUT | Mon Feb 8 09:24:07 2021 |  | Sparky 0.0.7
-INJECTION:  AMB % to 020 % Watercut at 0.02 % Salinity
-
-Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection
-Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Comment
-========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== ============
-     1567  100.00    1  INT       1      0.00     0.00     10.82       23.78     0.00         0.00         0.00       0.00         0.00

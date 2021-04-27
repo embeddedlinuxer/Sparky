@@ -47,7 +47,6 @@ win32 {
 
 FORMS += forms/mainwindow.ui \
     forms/about.ui	\
-    forms/BatchProcessor.ui \
 #    forms/serialsettingswidget.ui \
 #    forms/ipaddressctrl.ui \
 #    forms/serialsetting.ui
