@@ -27,12 +27,15 @@
 #define RELEASE_VERSION             "0.0.8"
 #define RAZ                         0 
 #define EEA                         1 
+#define SERIES_1                    1 
+#define SERIES_2                    0 
 
 #define STABILITY_CHECK				true
 #define NO_STABILITY_CHECK			false
 
 #define PHASE_OIL					0.0
 #define PHASE_WATER					1.0
+#define PHASE_ERROR					2.0
 
 /// sub system	
 #define CONTROLBOX_SLAVE 	        100
@@ -67,6 +70,9 @@
 #define HEADER3                     "Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection  Maste Pipe  Master Pipe Master Pipe Master Pipe Master Pipe";
 #define HEADER4                     "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Temperature Oil Adjust  Frequency   Water Cut   Oil Rp      Phase  Comment";
 #define HEADER5                     "========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== =========== =========== =========== =========== =========== ====== ========";
+#define HEADER3_SIM                 "Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection  Maste Pipe  Master Pipe Master Pipe Master Pipe Master Pipe        Target   Target";
+#define HEADER4_SIM                 "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Temperature Oil Adjust  Frequency   Water Cut   Oil Rp      Phase  Watercut Oil Rp";
+#define HEADER5_SIM                 "========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== =========== =========== =========== =========== =========== ====== ======== ===========";
 
 /// loop
 #define L1                          0
@@ -83,11 +89,13 @@
 #define MAIN_SERVER                 "MainServer"
 #define LOCAL_SERVER                "LocalServer"
 
+/// LOOP.runMode
 #define STOP_CALIBRATION			-1	
 #define TEMPRUN_MIN					1	
 #define TEMPRUN_HIGH				2	
 #define TEMPRUN_INJECTION			3	
 #define INJECTION_RUN				4
+#define SIMULATION_RUN				5
 
 //////////////////////////
 /////// JSON KEYS ////////
@@ -201,7 +209,7 @@ typedef struct PIPE_OBJECT
     QElapsedTimer * etimer;
     QCheckBox * checkBox;
     QCheckBox * lineView; 
-    QLineEdit * watercut;
+    QLineEdit * wc;
     QLineEdit * startFreq;
     QLineEdit * freq;
     QLineEdit * temp;
@@ -209,6 +217,7 @@ typedef struct PIPE_OBJECT
 	QProgressBar * freqProgress;
 	QProgressBar * tempProgress;
 
+	double watercut;
 	double temperature;
     double temperature_prev;
     double frequency;
@@ -218,10 +227,10 @@ typedef struct PIPE_OBJECT
     double measai;
     double trimai;
 
-	qreal data_x;
-	qreal data_y;;
+	QPen pen;
+	QPen pen2;
 
-	PIPE_OBJECT() : isStartFreq(true), osc(0), tempStability(0), freqStability(0), status(ENABLED), rolloverTracker(0), calFile(""),  mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), series_2(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), watercut(new QLineEdit), startFreq(new QLineEdit), freq(new QLineEdit), temp(new QLineEdit), reflectedPower(new QLineEdit), freqProgress(new QProgressBar), tempProgress(new QProgressBar),temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), frequency_start(0), oilrp(0), measai(0), trimai(0), data_x(10), data_y(10) {}
+	PIPE_OBJECT() : isStartFreq(true), osc(0), tempStability(0), freqStability(0), status(ENABLED), rolloverTracker(0), calFile(""),  mainDirPath(""), localDirPath(""), pipeId(""), file(""), fileCalibrate("CALIBRATE"), fileAdjusted("ADJUSTED"), fileRollover("ROLLOVER"), slave(new QLineEdit), series(new QSplineSeries), series_2(new QSplineSeries), etimer(new QElapsedTimer), lineView(new QCheckBox), checkBox(new QCheckBox), wc(new QLineEdit), startFreq(new QLineEdit), freq(new QLineEdit), temp(new QLineEdit), reflectedPower(new QLineEdit), freqProgress(new QProgressBar), tempProgress(new QProgressBar), watercut(0), temperature(0), frequency(0), temperature_prev(0), frequency_prev(0), frequency_start(0), oilrp(0), measai(0), trimai(0), pen (Qt::green, 3, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin), pen2 (Qt::green, 3, Qt::DotLine, Qt::RoundCap, Qt::RoundJoin)  {}
 
     //This is the destructor.  Will delete the array of vertices, if present.
     ~PIPE_OBJECT()
@@ -231,7 +240,7 @@ typedef struct PIPE_OBJECT
         if (etimer) delete etimer;
         if (checkBox) delete checkBox;
         if (lineView) delete lineView; 
-        if (watercut) delete watercut;
+        if (wc) delete wc;
         if (startFreq) delete startFreq;
         if (freq) delete freq;
         if (temp) delete temp;
@@ -386,7 +395,7 @@ public:
 	void inject(const int, const bool);
 	void setProductAndCalibrationMode();
     void masterPipe(int, QString, bool);
-    void prepareForNextFile(const int, const QString);
+    void setFileNameForNextStage(const int, const QString);
     void writeToCalFile(int, QString);
     void closeCalibrationFile(int, int, double);
     void changeModbusInterface(const QString &port, char parity);
@@ -426,7 +435,7 @@ public:
     void onFunctionCodeChanges();
     double sendCalibrationRequest(int, modbus_t *, int, int, int, int, uint8_t *, uint16_t *, bool, bool, QString);
     void updateChart(QSplineSeries *, double, double, double, double, double, double, double, double);
-    void updateGraph(const int, const qreal, const qreal);
+    void updateGraph(const int, const double, const double, const bool);
 
 private slots:
 
