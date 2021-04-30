@@ -12,5 +12,6 @@
         <file>red.ico</file>
         <file>save.png</file>
         <file>open.png</file>
+        <file>pipe.png</file>
     </qresource>
 </RCC>

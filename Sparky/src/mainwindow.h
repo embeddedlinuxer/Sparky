@@ -24,7 +24,7 @@
 #include "modbus-rtu.h"
 #include "modbus.h"
 
-#define RELEASE_VERSION             "0.0.8"
+#define RELEASE_VERSION             "0.0.9"
 #define RAZ                         0 
 #define EEA                         1 
 #define SERIES_1                    1 
@@ -68,11 +68,11 @@
 
 /// header lines
 #define HEADER3                     "Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection  Maste Pipe  Master Pipe Master Pipe Master Pipe Master Pipe";
-#define HEADER4                     "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Temperature Oil Adjust  Frequency   Water Cut   Oil Rp      Phase  Comment";
+#define HEADER4                     "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Temperature Oil Adjust  Frequency   Watercut    Oil Rp      Phase  Comment";
 #define HEADER5                     "========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== =========== =========== =========== =========== =========== ====== ========";
-#define HEADER3_SIM                 "Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection  Maste Pipe  Master Pipe Master Pipe Master Pipe Master Pipe        Target   Target";
-#define HEADER4_SIM                 "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Temperature Oil Adjust  Frequency   Water Cut   Oil Rp      Phase  Watercut Oil Rp";
-#define HEADER5_SIM                 "========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== =========== =========== =========== =========== =========== ====== ======== ===========";
+#define HEADER3_SIM                 "Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection  Maste Pipe  Master Pipe Master Pipe Master Pipe Master Pipe        Target";
+#define HEADER4_SIM                 "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Temperature Oil Adjust  Frequency   Watercut    Oil Rp      Phase  Watercut";
+#define HEADER5_SIM                 "========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== =========== =========== =========== =========== =========== ====== ========";
 
 /// loop
 #define L1                          0
@@ -261,7 +261,7 @@ typedef struct LOOP_OBJECT
 	bool isMinRef;
 	bool isMaxRef;
 	bool isInjection;
-	QString mode;
+	QString cut;
 	double masterMin;
 	double masterMax;
 	double masterDelta;
@@ -295,6 +295,7 @@ typedef struct LOOP_OBJECT
 	QString calExt;
 	QString adjExt;
 	QString rolExt;
+	QString simExt;
 	QString operatorName;
     
 	/// register address for calibration
@@ -306,14 +307,15 @@ typedef struct LOOP_OBJECT
     int ID_WATER_ADJUST;
     int ID_FREQ;
     int ID_OIL_RP;
-    int ID_MASTER_WATERCUT;
+
+	int ID_MASTER_WATERCUT;
     int ID_MASTER_SALINITY;
     int ID_MASTER_OIL_ADJUST;
     int ID_MASTER_OIL_RP;
     int ID_MASTER_TEMPERATURE;
     int ID_MASTER_FREQ;
     int ID_MASTER_PHASE;
-	
+
     QLineEdit * loopVolume;
 	QComboBox * saltStart;
 	QComboBox * saltStop;
@@ -338,7 +340,7 @@ typedef struct LOOP_OBJECT
     QValueAxis * axisY;
     QValueAxis * axisY2;
 
-	LOOP_OBJECT() : isMaster(false), isCal(false), isEEA(0), isAMB(1), isMinRef(1), isMaxRef(1), isInjection(1), mode(""), masterMin(0), masterMax(0),masterDelta(0), masterDeltaFinal(0), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), runMode(0), injectionTemp(0), oilPhaseInjectCounter(0), xDelay(0), loopNumber(0), maxInjectionWater(80), maxInjectionOil(200), portIndex(0), maxGraphDataPoint(0), yFreq(0), zTemp(0), intervalOilPump(0.25), intervalBigPump(1), intervalSmallPump(0.25), filExt(""), calExt(""), adjExt(""), rolExt(""), operatorName(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), ID_MASTER_WATERCUT(15), ID_MASTER_SALINITY(21), ID_MASTER_OIL_ADJUST(23), ID_MASTER_OIL_RP(115), ID_MASTER_TEMPERATURE(5),ID_MASTER_FREQ(111),ID_MASTER_PHASE(17),   loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(0), masterSalinity(0), masterOilAdj(0), masterOilRp(0), masterFreq(0), masterTemp(0), masterPhase(1), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY2(new QValueAxis) {};
+	LOOP_OBJECT() : isMaster(true), isCal(true), isEEA(false), isAMB(1), isMinRef(1), isMaxRef(1), isInjection(1), cut(MID), masterMin(0), masterMax(0),masterDelta(0), masterDeltaFinal(0), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), runMode(0), injectionTemp(0), oilPhaseInjectCounter(0), xDelay(0), loopNumber(0), maxInjectionWater(80), maxInjectionOil(200), portIndex(0), maxGraphDataPoint(0), yFreq(0), zTemp(0), intervalOilPump(0.25), intervalBigPump(1), intervalSmallPump(0.25), filExt(""), calExt(""), adjExt(""),rolExt(""),  simExt(".SIM"), operatorName(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), ID_MASTER_WATERCUT(15), ID_MASTER_SALINITY(21), ID_MASTER_OIL_ADJUST(23), ID_MASTER_OIL_RP(115), ID_MASTER_TEMPERATURE(5),ID_MASTER_FREQ(111),ID_MASTER_PHASE(17), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(0), masterSalinity(0), masterOilAdj(0), masterOilRp(0), masterFreq(0), masterTemp(0), masterPhase(1), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY2(new QValueAxis) {};
 
 	~LOOP_OBJECT()
 	{
@@ -389,11 +391,10 @@ public:
 
 	void createDataStream(const int pipe, QString & data_stream);
 	void startTempRun();
-	void readMasterPipe();
 	void updateLoopStatus(const double, const double, const double, const double);
 	void readPipe(const int, const bool);
 	void inject(const int, const bool);
-	void setProductAndCalibrationMode();
+	void readLoopConfiguration();
     void masterPipe(int, QString, bool);
     void setFileNameForNextStage(const int, const QString);
     void writeToCalFile(int, QString);
@@ -404,9 +405,9 @@ public:
     void initializeGraph();
     void initializePipeObjects();
     void initializeLoopObjects();
-    void setInputValidator(void);
     bool validateSerialNumber(modbus_t *);   
-    void updatePipeStatus(const int, const double, const double, const double, const double, const double); 
+    void displayPipeReading(const int, const double, const double, const double, const double, const double); 
+	void updateMasterPipeStatus(const double, const double, const double, const double, const double, const double);
     bool informUser(const QString, const QString, const QString);
     void busMonitorAddItem( bool isRequest,uint16_t slave,uint8_t func,uint16_t addr,uint16_t nb,uint16_t expectedCRC,uint16_t actualCRC );
     static void stBusMonitorAddItem( modbus_t * modbus,uint8_t isOut, uint16_t slave, uint8_t func, uint16_t addr,uint16_t nb, uint16_t expectedCRC, uint16_t actualCRC );
@@ -444,6 +445,7 @@ private slots:
     void toggleLineView_P3(bool); 
 
     /// config menu
+	void readMasterPipe();
     bool isUserInputYes(const QString, const QString);
     void injectionPumpRates();
     void injectionBucket();
@@ -477,7 +479,7 @@ private slots:
     void stopCalibration();
 	void updateFileList(const QString, const int, const int);
 	void createInjectionFile(const int, const int, const QString, const QString, const QString, const QString);
-    void onCalibrationButtonPressed();
+    void startCalibration();
     void onRtuPortActive(bool);
     void changeSerialPort(int);
     void createTempRunFile(const int, const QString, const QString, const QString, const int);
@@ -511,7 +513,7 @@ private slots:
     void onUnlockFactoryDefaultBtnPressed();
     void onLockFactoryDefaultBtnPressed();
     void onUpdateFactoryDefaultPressed();
-    void updatePipeStability(const bool, const int, const int);
+    void updatePipeStability(const int, const bool);
     void readJsonConfigFile();
     void writeJsonConfigFile();
 
