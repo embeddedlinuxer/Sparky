@@ -13,5 +13,7 @@
         <file>save.png</file>
         <file>open.png</file>
         <file>pipe.png</file>
+        <file>water.png</file>
+        <file>stopInjection.png</file>
     </qresource>
 </RCC>

@@ -102,8 +102,6 @@ MainWindow::MainWindow( QWidget * _parent ) :
 
 MainWindow::~MainWindow()
 {
-	inject(COIL_WATER_PUMP,false);
-	releaseSerialModbus();
     delete m_statusInd;
     delete m_statusText;
 	delete ui;
@@ -127,9 +125,9 @@ setValidators()
 
 void
 MainWindow::
-delay(int sec = 2)
+delay(int msec = 2000)
 {
-    QTime dieTime= QTime::currentTime().addSecs(sec);
+    QTime dieTime= QTime::currentTime().addMSecs(msec);
     while (QTime::currentTime() < dieTime)
     QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
 }
@@ -162,6 +160,8 @@ initializeToolbarIcons() {
 	ui->actionStop->setVisible(false);
     ui->toolBar->addSeparator();
     ui->toolBar->addAction(ui->actionReadMasterPipe);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(ui->actionStopInjection);
 }
 
 void
@@ -865,6 +865,7 @@ connectToolbar()
     connect(ui->actionStart, SIGNAL(triggered()),this,SLOT(onActionStart()));
     connect(ui->actionStop, SIGNAL(triggered()),this,SLOT(onActionStop()));
     connect(ui->actionReadMasterPipe, SIGNAL(triggered()),this,SLOT(readMasterPipe()));
+    connect(ui->actionStopInjection, SIGNAL(triggered()),this,SLOT(onActionStopInjection()));
 
     /// injection pump rates
     connect(ui->actionInjection_Pump_Rates, SIGNAL(triggered()),this,SLOT(injectionPumpRates()));
@@ -977,6 +978,7 @@ connectLineView()
     connect(ui->checkBox_20, SIGNAL(clicked(bool)), this, SLOT(toggleLineView_P2(bool)));
     connect(ui->checkBox_21, SIGNAL(clicked(bool)), this, SLOT(toggleLineView_P3(bool)));
 }
+
 
 void
 MainWindow::
@@ -1549,6 +1551,13 @@ saveCsvFile()
 
 void
 MainWindow::
+onActionStopInjection()
+{
+	inject(COIL_WATER_PUMP,false);
+}
+
+void
+MainWindow::
 onActionStart()
 {
 	/// calibration configuration
@@ -1563,6 +1572,11 @@ onActionStart()
 	ui->groupBox_29->hide();
 	ui->groupBox_12->show();
 	ui->groupBox_20->show();
+	
+	ui->tabWidget->setTabEnabled(1,false);
+	ui->tabWidget->setTabEnabled(2,false);
+	ui->tabWidget->setTabEnabled(3,false);
+	ui->tabWidget->setTabEnabled(4,false);
 
 	updateLoopTabIcon(true);
     ui->actionStop->setVisible(true);
@@ -1589,6 +1603,11 @@ onActionStop()
 	updateLoopTabIcon(false);
     ui->actionStart->setVisible(true);
     ui->actionStop->setVisible(false);
+	
+	ui->tabWidget->setTabEnabled(1,true);
+	ui->tabWidget->setTabEnabled(2,true);
+	ui->tabWidget->setTabEnabled(3,true);
+	ui->tabWidget->setTabEnabled(4,true);
 
 	ui->groupBox_13->setEnabled(true);
 	ui->groupBox_11->setEnabled(true);
@@ -3037,32 +3056,39 @@ readPipe(const int pipe, const bool checkStability)
  
 	/// watercut 
     if (LOOP.runMode == SIMULATION_RUN) PIPE[pipe].watercut = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_WATERCUT, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+	delay(SLEEP_TIME);
 
     /// temperature
     val = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
 	if ((val<100) && (val>-100)) PIPE[pipe].temperature = val;
+	delay(SLEEP_TIME);
 
 	/// get frequency
     val = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
 	if ((val<1000) && (val>0)) PIPE[pipe].frequency = val;
+	delay(SLEEP_TIME);
 
     /// get oil_rp 
     val = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_OIL_RP, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
 	if ((val<100) && (val>0)) PIPE[pipe].oilrp = val;
+	delay(SLEEP_TIME);
 
     /// get measured ai
     val = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, RAZ_MEAS_AI, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
 	if ((val<100) && (val>-100)) PIPE[pipe].measai = val;
+	delay(SLEEP_TIME);
 
     /// get trimmed ai
     val = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, RAZ_TRIM_AI, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
 	if ((val<100) && (val>-100)) PIPE[pipe].trimai = val;
+	delay(SLEEP_TIME);
 
     /// update display
 	if (PIPE[pipe].status != DISABLED) 
 	{
 		if (LOOP.runMode == SIMULATION_RUN) displayPipeReading(pipe, PIPE[pipe].watercut, PIPE[pipe].frequency_start, PIPE[pipe].frequency, PIPE[pipe].temperature, PIPE[pipe].oilrp);
 		else displayPipeReading(pipe, LOOP.watercut, PIPE[pipe].frequency_start, PIPE[pipe].frequency, PIPE[pipe].temperature, PIPE[pipe].oilrp);
+		delay(SLEEP_TIME);
 	}
 
 	/// update chart	
@@ -3071,15 +3097,17 @@ readPipe(const int pipe, const bool checkStability)
     	LOOP.axisY->setTitleText("Watercut (%)");
 		updateGraph(pipe, PIPE[pipe].frequency, LOOP.masterWatercut, SERIES_1);
 		updateGraph(pipe, PIPE[pipe].frequency, PIPE[pipe].oilrp, SERIES_2);
+		delay(SLEEP_TIME);
 	}
 	else 
 	{
     	LOOP.axisY->setTitleText("Temperature (°C)");
 		updateGraph(pipe, PIPE[pipe].frequency, LOOP.masterTemp, SERIES_1);
 		updateGraph(pipe, PIPE[pipe].frequency, PIPE[pipe].oilrp, SERIES_1);
+		delay(SLEEP_TIME);
 	}
 
-    updatePipeStability(pipe,STABILITY_CHECK);
+    updatePipeStability(pipe,checkStability);
 }
 
 
@@ -3100,24 +3128,31 @@ readMasterPipe()
  
     /// watercut
     LOOP.masterWatercut = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_WATERCUT, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+	delay(SLEEP_TIME);
 
 	/// salinity
     LOOP.masterSalinity = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_SALINITY, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+	delay(SLEEP_TIME);
 
 	/// oil adjust 
     LOOP.masterOilAdj = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_OIL_ADJUST, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+	delay(SLEEP_TIME);
    
 	/// oil rp 
 	LOOP.masterOilRp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_OIL_RP, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+	delay(SLEEP_TIME);
 
 	/// temp
 	LOOP.masterTemp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+	delay(SLEEP_TIME);
 
 	/// freq
 	LOOP.masterFreq = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+	delay(SLEEP_TIME);
 
 	/// phase
 	LOOP.masterPhase = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_PHASE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+	delay(SLEEP_TIME);
 
 	/// update master pipe display
 	updateMasterPipeStatus(LOOP.masterWatercut,LOOP.masterFreq,LOOP.masterTemp,LOOP.masterPhase,LOOP.masterOilAdj,LOOP.masterSalinity);
@@ -3204,24 +3239,16 @@ runTempRun()
 	    		/// validate stability 
            		if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
            		{
-					/// read data
 					(abs(LOOP.minRefTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
-
-					/// get data stream
 					createDataStream(pipe,data_stream);
-
-					/// write to file
                		writeToCalFile(pipe, data_stream);
            		}
            		else 
            		{
 					if (PIPE[pipe].status == ENABLED) 
 					{
-						PIPE[pipe].status = DONE; /// a pipe stops if it reaches stability
+						PIPE[pipe].status = DONE; /// stop reading pipe upon reaching stability
                			setFileNameForNextStage(pipe, QString::number(LOOP.minRefTemp).append("_").append(QString::number(LOOP.maxRefTemp)).append(LOOP.filExt));
-						readPipe(pipe, STABILITY_CHECK);
-
-						/// change run mode if it's ready
 						if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) LOOP.runMode = TEMPRUN_HIGH;
 					}
            		}
@@ -3256,24 +3283,16 @@ runTempRun()
 			{
            		if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
            		{
-					/// read data
 					(abs(LOOP.maxRefTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
-
-					/// get data stream
 					createDataStream(pipe,data_stream);
-
-					/// write to file
    	            	writeToCalFile(pipe, data_stream);
    	        	}
    	        	else 
    	        	{
 					if (PIPE[pipe].status == ENABLED) 
 					{
-						PIPE[pipe].status = DONE; /// a pipe stops reading upon reaching stability
+						PIPE[pipe].status = DONE;
    	           			setFileNameForNextStage(pipe, QString::number(LOOP.maxRefTemp).append("_").append(QString::number(LOOP.injectionTemp)).append(LOOP.filExt));
-						readPipe(pipe, STABILITY_CHECK);
-	
-						/// change run mode if it's ready
 						if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) LOOP.runMode = TEMPRUN_INJECTION;
 					}
    	        	}
@@ -3308,13 +3327,8 @@ runTempRun()
 			{
 				if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
        			{
-					/// read data
 					(abs(LOOP.injectionTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
-
-					/// get data stream
 					createDataStream(pipe,data_stream);
-
-					/// write to file
            			writeToCalFile(pipe, data_stream);
        			}
        			else 
@@ -3324,7 +3338,6 @@ runTempRun()
 						PIPE[pipe].status = DONE; // pipe temprun stops at reaching stability
            				if (LOOP.cut == LOW) setFileNameForNextStage(pipe,"CALIBRAT.LCI");
            				else if (LOOP.cut == MID) setFileNameForNextStage(pipe,QString("OIL__").append(QString::number(LOOP.injectionTemp)).append(".MCI"));
-						readPipe(pipe, STABILITY_CHECK);
 						PIPE[pipe].frequency_start = PIPE[pipe].frequency;
 
 						/// check condition for injection
@@ -3444,12 +3457,17 @@ runInjection()
 					/// validate injection time
 					if ((masterInjectionTime - masterInjectionStartTime) > LOOP.maxInjectionWater)
 					{
-						/// stop water injection?
-   						if (!isUserInputYes(QString("Injection Time ")+QString::number(masterInjectionTime - masterInjectionStartTime)+QString(" Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater), "Do You Want To Continue?"))
+						static bool ignore = false;
+						if (!ignore)
 						{
-							inject(COIL_WATER_PUMP,false);
-							onActionStop();
-							return;
+							/// stop water injection?
+   							if (!isUserInputYes(QString("Injection Time ")+QString::number(masterInjectionTime - masterInjectionStartTime)+QString(" Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater), "Do You Want To Continue?"))
+							{
+								inject(COIL_WATER_PUMP,false);
+								onActionStop();
+								return;
+							}
+							else ignore = true;
 						}
 					}
 
@@ -3664,7 +3682,7 @@ runInjection()
    				{
        				/// re-read data
 					createInjectionFile(PIPE[pipe].slave->text().toInt(), pipe, "Rollver", QString::number(LOOP.watercut), 0, "ROLLOVER");
-					displayPipeReading(pipe, LOOP.watercut, PIPE[pipe].frequency, PIPE[pipe].frequency, PIPE[pipe].temperature, PIPE[pipe].oilrp);
+					displayPipeReading(pipe, LOOP.watercut, PIPE[pipe].frequency_start, PIPE[pipe].frequency, PIPE[pipe].temperature, PIPE[pipe].oilrp);
    				}
 
    				writeToCalFile(pipe, data_stream);

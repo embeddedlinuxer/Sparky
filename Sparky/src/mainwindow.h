@@ -135,7 +135,7 @@
 #define S_ROLLOVER          3 
 #define S_FILELIST          4 
 
-#define SLEEP_TIME          1
+#define SLEEP_TIME          300 // 300 milisecond
 #define SLAVE_CALIBRATION   0xFA
 #define FUNC_READ_FLOAT     0x04
 #define FUNC_READ_INT       0x04 
@@ -472,6 +472,7 @@ private slots:
     void onActionSettings();
     void onActionStart();
     void onActionStop();
+    void onActionStopInjection();
     void onModeChanged(bool);
 	void onMasterPipeToggled(const bool);
     void runInjection();

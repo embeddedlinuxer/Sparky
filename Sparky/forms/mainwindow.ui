@@ -5153,6 +5153,9 @@
    <property name="text">
     <string>Water</string>
    </property>
+   <property name="toolTip">
+    <string>Stop Injection</string>
+   </property>
   </action>
   <action name="actionOil">
    <property name="text">
@@ -5174,6 +5177,18 @@
    </property>
    <property name="toolTip">
     <string>Read Master Pipe Once</string>
+   </property>
+  </action>
+  <action name="actionStopInjection">
+   <property name="icon">
+    <iconset resource="../data/sparky.qrc">
+     <normaloff>:/stopInjection.png</normaloff>:/stopInjection.png</iconset>
+   </property>
+   <property name="text">
+    <string>Stop Injection</string>
+   </property>
+   <property name="toolTip">
+    <string>Stop Injection</string>
    </property>
   </action>
  </widget>
