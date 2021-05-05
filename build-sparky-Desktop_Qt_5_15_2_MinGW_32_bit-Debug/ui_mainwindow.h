@@ -127,6 +127,7 @@ public:
     QAction *actionOil;
     QAction *actionFinal_Delta_Watercut;
     QAction *actionReadMasterPipe;
+    QAction *actionStopInjection;
     QWidget *centralWidget;
     QTabWidget *tabWidget_2;
     QWidget *tab_8;
@@ -166,15 +167,17 @@ public:
     QRadioButton *radioButton_3;
     QRadioButton *radioButton_4;
     QRadioButton *radioButton_5;
+    QGroupBox *groupBox_13;
+    QRadioButton *radioButton_13;
+    QRadioButton *radioButton_15;
+    QRadioButton *radioButton_16;
+    QRadioButton *radioButton_14;
     QGroupBox *groupBox_5;
     QRadioButton *radioButton;
     QRadioButton *radioButton_2;
     QGroupBox *groupBox_11;
     QRadioButton *radioButton_11;
     QRadioButton *radioButton_12;
-    QGroupBox *groupBox_13;
-    QRadioButton *radioButton_13;
-    QRadioButton *radioButton_14;
     QGroupBox *groupBox_7;
     QLabel *label_98;
     QLabel *label_99;
@@ -586,6 +589,11 @@ public:
         QIcon icon8;
         icon8.addFile(QString::fromUtf8(":/pipe.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionReadMasterPipe->setIcon(icon8);
+        actionStopInjection = new QAction(MainWindowClass);
+        actionStopInjection->setObjectName(QString::fromUtf8("actionStopInjection"));
+        QIcon icon9;
+        icon9.addFile(QString::fromUtf8(":/stopInjection.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionStopInjection->setIcon(icon9);
         centralWidget = new QWidget(MainWindowClass);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         tabWidget_2 = new QTabWidget(centralWidget);
@@ -778,9 +786,26 @@ public:
         radioButton_5->setObjectName(QString::fromUtf8("radioButton_5"));
         radioButton_5->setGeometry(QRect(160, 8, 51, 31));
         radioButton_5->setChecked(true);
+        groupBox_13 = new QGroupBox(groupBox_12);
+        groupBox_13->setObjectName(QString::fromUtf8("groupBox_13"));
+        groupBox_13->setGeometry(QRect(10, 150, 291, 41));
+        radioButton_13 = new QRadioButton(groupBox_13);
+        radioButton_13->setObjectName(QString::fromUtf8("radioButton_13"));
+        radioButton_13->setGeometry(QRect(20, 10, 51, 31));
+        radioButton_13->setChecked(true);
+        radioButton_15 = new QRadioButton(groupBox_13);
+        radioButton_15->setObjectName(QString::fromUtf8("radioButton_15"));
+        radioButton_15->setGeometry(QRect(70, 10, 71, 31));
+        radioButton_16 = new QRadioButton(groupBox_13);
+        radioButton_16->setObjectName(QString::fromUtf8("radioButton_16"));
+        radioButton_16->setGeometry(QRect(150, 10, 82, 31));
+        radioButton_14 = new QRadioButton(groupBox_13);
+        radioButton_14->setObjectName(QString::fromUtf8("radioButton_14"));
+        radioButton_14->setGeometry(QRect(240, 10, 51, 31));
+        radioButton_14->setChecked(false);
         groupBox_5 = new QGroupBox(groupBox_12);
         groupBox_5->setObjectName(QString::fromUtf8("groupBox_5"));
-        groupBox_5->setGeometry(QRect(10, 150, 291, 41));
+        groupBox_5->setGeometry(QRect(10, 30, 291, 41));
         radioButton = new QRadioButton(groupBox_5);
         radioButton->setObjectName(QString::fromUtf8("radioButton"));
         radioButton->setGeometry(QRect(190, 8, 61, 31));
@@ -800,17 +825,6 @@ public:
         radioButton_12->setObjectName(QString::fromUtf8("radioButton_12"));
         radioButton_12->setGeometry(QRect(190, 10, 41, 31));
         radioButton_12->setChecked(false);
-        groupBox_13 = new QGroupBox(groupBox_12);
-        groupBox_13->setObjectName(QString::fromUtf8("groupBox_13"));
-        groupBox_13->setGeometry(QRect(10, 30, 291, 41));
-        radioButton_13 = new QRadioButton(groupBox_13);
-        radioButton_13->setObjectName(QString::fromUtf8("radioButton_13"));
-        radioButton_13->setGeometry(QRect(50, 9, 101, 31));
-        radioButton_13->setChecked(true);
-        radioButton_14 = new QRadioButton(groupBox_13);
-        radioButton_14->setObjectName(QString::fromUtf8("radioButton_14"));
-        radioButton_14->setGeometry(QRect(190, 10, 91, 31));
-        radioButton_14->setChecked(false);
         groupBox_7 = new QGroupBox(tab_8);
         groupBox_7->setObjectName(QString::fromUtf8("groupBox_7"));
         groupBox_7->setGeometry(QRect(10, 530, 851, 171));
@@ -1909,11 +1923,18 @@ public:
         actionMax_Watercut->setText(QCoreApplication::translate("MainWindowClass", "Max Initial Watercut", nullptr));
         actionDelta_Master->setText(QCoreApplication::translate("MainWindowClass", "Initial Delta Watercut ", nullptr));
         actionWater->setText(QCoreApplication::translate("MainWindowClass", "Water", nullptr));
+#if QT_CONFIG(tooltip)
+        actionWater->setToolTip(QCoreApplication::translate("MainWindowClass", "Stop Injection", nullptr));
+#endif // QT_CONFIG(tooltip)
         actionOil->setText(QCoreApplication::translate("MainWindowClass", "Oil", nullptr));
         actionFinal_Delta_Watercut->setText(QCoreApplication::translate("MainWindowClass", "Final Deltal Watercut", nullptr));
         actionReadMasterPipe->setText(QCoreApplication::translate("MainWindowClass", "ReadMasterPipe", nullptr));
 #if QT_CONFIG(tooltip)
         actionReadMasterPipe->setToolTip(QCoreApplication::translate("MainWindowClass", "Read Master Pipe Once", nullptr));
+#endif // QT_CONFIG(tooltip)
+        actionStopInjection->setText(QCoreApplication::translate("MainWindowClass", "Stop Injection", nullptr));
+#if QT_CONFIG(tooltip)
+        actionStopInjection->setToolTip(QCoreApplication::translate("MainWindowClass", "Stop Injection", nullptr));
 #endif // QT_CONFIG(tooltip)
         groupBox_18->setTitle(QCoreApplication::translate("MainWindowClass", "SERIAL CONNECTION", nullptr));
         label_14->setText(QCoreApplication::translate("MainWindowClass", "SERIAL PORT", nullptr));
@@ -2000,15 +2021,17 @@ public:
         radioButton_3->setText(QCoreApplication::translate("MainWindowClass", "HIGH", nullptr));
         radioButton_4->setText(QCoreApplication::translate("MainWindowClass", "FULL", nullptr));
         radioButton_5->setText(QCoreApplication::translate("MainWindowClass", "MID", nullptr));
+        groupBox_13->setTitle(QCoreApplication::translate("MainWindowClass", "RUN MODE", nullptr));
+        radioButton_13->setText(QCoreApplication::translate("MainWindowClass", "ALL", nullptr));
+        radioButton_15->setText(QCoreApplication::translate("MainWindowClass", "TEMPRUN", nullptr));
+        radioButton_16->setText(QCoreApplication::translate("MainWindowClass", "INJECTION", nullptr));
+        radioButton_14->setText(QCoreApplication::translate("MainWindowClass", "SIM", nullptr));
         groupBox_5->setTitle(QCoreApplication::translate("MainWindowClass", "PRODUCT", nullptr));
         radioButton->setText(QCoreApplication::translate("MainWindowClass", "EEA", nullptr));
         radioButton_2->setText(QCoreApplication::translate("MainWindowClass", "RAZOR", nullptr));
         groupBox_11->setTitle(QCoreApplication::translate("MainWindowClass", "USE MASATER PIPE", nullptr));
         radioButton_11->setText(QCoreApplication::translate("MainWindowClass", "YES", nullptr));
         radioButton_12->setText(QCoreApplication::translate("MainWindowClass", "NO", nullptr));
-        groupBox_13->setTitle(QCoreApplication::translate("MainWindowClass", "RUN MODE", nullptr));
-        radioButton_13->setText(QCoreApplication::translate("MainWindowClass", "CALIBRATION", nullptr));
-        radioButton_14->setText(QCoreApplication::translate("MainWindowClass", "SIMULATION", nullptr));
         groupBox_7->setTitle(QCoreApplication::translate("MainWindowClass", "PIPES UNDER CALIBRATION", nullptr));
         label_98->setText(QCoreApplication::translate("MainWindowClass", "SERIAL NUMBER", nullptr));
         label_99->setText(QCoreApplication::translate("MainWindowClass", "WATERCUT [ % ]", nullptr));

@@ -27,8 +27,8 @@
 #define RELEASE_VERSION             "0.0.9"
 #define RAZ                         0 
 #define EEA                         1 
-#define SERIES_1                    1 
-#define SERIES_2                    0 
+#define SERIES_WATERCUT             0
+#define SERIES_RP                   1 
 
 #define STABILITY_CHECK				true
 #define NO_STABILITY_CHECK			false
@@ -67,12 +67,9 @@
 #define LOW                         "\\LOWCUT\\LC"
 
 /// header lines
-#define HEADER3                     "Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection  Maste Pipe  Master Pipe Master Pipe Master Pipe Master Pipe";
-#define HEADER4                     "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Temperature Oil Adjust  Frequency   Watercut    Oil Rp      Phase  Comment";
+#define HEADER3                     "Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection  Maste Pipe  Master Pipe Master Pipe Master Pipe Master Pipe	   	   Target";
+#define HEADER4                     "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Temperature Oil Adjust  Frequency   Watercut    Oil Rp      Phase  Watercut";
 #define HEADER5                     "========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== =========== =========== =========== =========== =========== ====== ========";
-#define HEADER3_SIM                 "Time From  Water  Osc  Tune Tuning            Incident Reflected                         Analog     User Input  Injection  Maste Pipe  Master Pipe Master Pipe Master Pipe Master Pipe        Target";
-#define HEADER4_SIM                 "Run Start   Cut   Band Type Voltage Frequency  Power     Power   Temperature Pressure    Input        Value       Time     Temperature Oil Adjust  Frequency   Watercut    Oil Rp      Phase  Watercut";
-#define HEADER5_SIM                 "========= ======= ==== ==== ======= ========= ======== ========= =========== ======== ============ ============ ========== =========== =========== =========== =========== =========== ====== ========";
 
 /// loop
 #define L1                          0
@@ -436,7 +433,10 @@ public:
     void onFunctionCodeChanges();
     double sendCalibrationRequest(int, modbus_t *, int, int, int, int, uint8_t *, uint16_t *, bool, bool, QString);
     void updateChart(QSplineSeries *, double, double, double, double, double, double, double, double);
-    void updateGraph(const int, const double, const double, const bool);
+    void updateGraph(const int, const double, const double, const int);
+
+protected:
+	void mousePressEvent(QMouseEvent *event) override;
 
 private slots:
 

@@ -148,11 +148,14 @@ release/qrc_sparky.cpp: ../Sparky/data/sparky.qrc \
 		../Sparky/data/red.ico \
 		../Sparky/data/splash.png \
 		../Sparky/data/icon.ico \
+		../Sparky/data/splash_2.png \
+		../Sparky/data/stopInjection.png \
 		../Sparky/data/pause.png \
 		../Sparky/data/pipe.png \
 		../Sparky/data/connect.png \
 		../Sparky/data/settings.png \
-		../Sparky/data/green.ico
+		../Sparky/data/green.ico \
+		../Sparky/data/water.png
 	G:\Qt\5.15.2\mingw81_32\bin\rcc.exe -name sparky ..\Sparky\data\sparky.qrc -o release\qrc_sparky.cpp
 
 compiler_moc_predefs_make_all: release/moc_predefs.h

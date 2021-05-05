@@ -97,6 +97,29 @@ MainWindow::MainWindow( QWidget * _parent ) :
 
     /// clear connection at start
     updateLoopTabIcon(false);
+
+	/// match pipe colors with chart
+   	PIPE[0].slave->setStyleSheet("color: red;");
+   	PIPE[0].wc->setStyleSheet("color: red;");
+   	PIPE[0].startFreq->setStyleSheet("color: red;");
+   	PIPE[0].freq->setStyleSheet("color: red;");
+   	PIPE[0].temp->setStyleSheet("color: red;");
+   	PIPE[0].reflectedPower->setStyleSheet("color: red;");
+
+	PIPE[1].slave->setStyleSheet("color: blue;");
+   	PIPE[1].wc->setStyleSheet("color: blue;");
+   	PIPE[1].startFreq->setStyleSheet("color: blue;");
+   	PIPE[1].freq->setStyleSheet("color: blue;");
+   	PIPE[1].temp->setStyleSheet("color: blue;");
+   	PIPE[1].reflectedPower->setStyleSheet("color: blue;");
+
+	PIPE[2].slave->setStyleSheet("color: black;");
+   	PIPE[2].wc->setStyleSheet("color: black;");
+   	PIPE[2].startFreq->setStyleSheet("color: black;");
+   	PIPE[2].freq->setStyleSheet("color: black;");
+   	PIPE[2].temp->setStyleSheet("color: black;");
+   	PIPE[2].reflectedPower->setStyleSheet("color: black;");
+
 }
 
 
@@ -733,6 +756,7 @@ initializeGraph()
 	/// setup chart
     LOOP.chart->legend()->hide();
     LOOP.chartView->setChart(LOOP.chart);
+	LOOP.chartView->setRubberBand(QChartView::HorizontalRubberBand);
 
 	/// set pen color
 	PIPE[0].pen.setColor(Qt::red);
@@ -748,6 +772,7 @@ initializeGraph()
 		PIPE[pipe].series->setPen(PIPE[pipe].pen);
     	PIPE[pipe].series_2->setPen(PIPE[pipe].pen2);
 		LOOP.chart->addSeries(PIPE[pipe].series);
+		LOOP.chart->addSeries(PIPE[pipe].series_2);
 	}
 
 	/// addAxis
@@ -789,9 +814,9 @@ initializeGraph()
 
 void
 MainWindow::
-updateGraph(const int pipe, const double x, const double y, const bool isSeries1)
+updateGraph(const int pipe, const double x, const double y, const int Series)
 {
-	if (isSeries1) PIPE[pipe].series->append(x,y);
+	if (Series == SERIES_WATERCUT) PIPE[pipe].series->append(x,y);
 	else PIPE[pipe].series_2->append(x,y);
 }
 
@@ -2593,6 +2618,40 @@ initializeTabIcons()
 
 void
 MainWindow::
+createTempRunFile(const int sn, const QString startValue, const QString stopValue, const QString saltValue, const int pipe)
+{
+	/// set file names
+    QDateTime currentDataTime = QDateTime::currentDateTime();
+
+    /// headers 
+    QString header0;
+    LOOP.isEEA ? header0 = EEA_INJECTION_FILE : header0 = RAZ_INJECTION_FILE;
+    QString header1("SN"+QString::number(sn)+" | "+LOOP.cut.split("\\").at(1) +" | "+currentDataTime.toString()+" | L"+QString::number(LOOP.loopNumber)+PIPE[pipe].pipeId+" | "+PROJECT+RELEASE_VERSION); 
+    QString header2("INJECTION:  "+startValue+" % "+"to "+stopValue+" % "+"Watercut at "+saltValue+" % "+"Salinity\n");
+    if ((LOOP.cut == LOW) || (!LOOP.isEEA)) header2 = "TEMPERATURE:  "+startValue+" °C "+"to "+stopValue+" °C\n";
+    QString header3 = HEADER3;
+    QString header4 = HEADER4;
+    QString header5 = HEADER5;
+
+    /// stream
+    QTextStream stream(&PIPE[pipe].file);
+
+    /// open file
+    PIPE[pipe].file.open(QIODevice::WriteOnly | QIODevice::Text);
+
+    /// write headers to stream
+    stream << header0 << '\n' << header1 << '\n' << header2 << '\n' << header3 << '\n' << header4 << '\n' << header5 << '\n';
+
+    /// close file
+    PIPE[pipe].file.close();
+
+	/// update file list
+	updateFileList(QFileInfo(PIPE[pipe].file).fileName(), sn, pipe);
+}
+
+
+void
+MainWindow::
 createInjectionFile(const int sn, const int pipe, const QString startValue, const QString stopValue, const QString saltValue, const QString filename)
 {
     /// headers 
@@ -2604,12 +2663,6 @@ createInjectionFile(const int sn, const int pipe, const QString startValue, cons
     QString header3 = HEADER3;
     QString header4 = HEADER4;
     QString header5 = HEADER5;
-	if (LOOP.runMode == SIMULATION_RUN)
-	{
-		header3 = HEADER3_SIM;
-    	header4 = HEADER4_SIM;
-    	header5 = HEADER5_SIM;
-	}
 	QString header21; // LOWCUT ONLY
     QString header22; // LOWCUT ONLY
 
@@ -2674,13 +2727,14 @@ createInjectionFile(const int sn, const int pipe, const QString startValue, cons
 		/// OIL_INJECTION TEMP
    	    if (!QFileInfo(PIPE[pipe].file).exists()) 
        	{
+			qDebug() << PIPE[pipe].file;
            	QTextStream stream(&PIPE[pipe].file);
            	PIPE[pipe].file.open(QIODevice::WriteOnly | QIODevice::Text);
            	stream << header0 << '\n' << header1 << '\n' << header2 << '\n' << header3 << '\n' << header4 << '\n' << header5 << '\n';
            	PIPE[pipe].file.close();
 		
 			/// update file list	
-			if (LOOP.runMode != SIMULATION_RUN) updateFileList(QFileInfo(PIPE[pipe].file).fileName(), sn, pipe);
+			updateFileList(QFileInfo(PIPE[pipe].file).fileName(), sn, pipe);
        	}
 	}
 }
@@ -2698,7 +2752,7 @@ updateFileList(const QString fileName, const int sn, const int pipe)
     LOOP.isEEA ? header0 = EEA_INJECTION_FILE : header0 = RAZ_INJECTION_FILE;
     QString header1("SN"+QString::number(sn)+" | "+LOOP.cut.split("\\").at(1) +" | "+currentDataTime.toString()+" | L"+QString::number(LOOP.loopNumber)+PIPE[pipe].pipeId+" | "+PROJECT+RELEASE_VERSION); 
  
-    file.setFileName(PIPE[pipe].mainDirPath+"\\"+FILE_LIST);
+    if (!QFileInfo(file).exists()) file.setFileName(PIPE[pipe].mainDirPath+"\\"+FILE_LIST);
     file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
 
 	/// write header to streamList
@@ -2712,38 +2766,7 @@ updateFileList(const QString fileName, const int sn, const int pipe)
 }
 
 
-void
-MainWindow::
-createTempRunFile(const int sn, const QString startValue, const QString stopValue, const QString saltValue, const int pipe)
-{
-	/// set file names
-    QDateTime currentDataTime = QDateTime::currentDateTime();
 
-    /// headers 
-    QString header0;
-    LOOP.isEEA ? header0 = EEA_INJECTION_FILE : header0 = RAZ_INJECTION_FILE;
-    QString header1("SN"+QString::number(sn)+" | "+LOOP.cut.split("\\").at(1) +" | "+currentDataTime.toString()+" | L"+QString::number(LOOP.loopNumber)+PIPE[pipe].pipeId+" | "+PROJECT+RELEASE_VERSION); 
-    QString header2("INJECTION:  "+startValue+" % "+"to "+stopValue+" % "+"Watercut at "+saltValue+" % "+"Salinity\n");
-    if ((LOOP.cut == LOW) || (!LOOP.isEEA)) header2 = "TEMPERATURE:  "+startValue+" °C "+"to "+stopValue+" °C\n";
-    QString header3 = HEADER3;
-    QString header4 = HEADER4;
-    QString header5 = HEADER5;
-
-    /// stream
-    QTextStream stream(&PIPE[pipe].file);
-
-    /// open file
-    PIPE[pipe].file.open(QIODevice::WriteOnly | QIODevice::Text);
-
-    /// write headers to stream
-    stream << header0 << '\n' << header1 << '\n' << header2 << '\n' << header3 << '\n' << header4 << '\n' << header5 << '\n';
-
-    /// close file
-    PIPE[pipe].file.close();
-
-	/// update file list
-	updateFileList(QFileInfo(PIPE[pipe].file).fileName(), sn, pipe);
-}
 
 
 void
@@ -2930,8 +2953,6 @@ prepareCalibration()
        	return false;
 	}
 
-	
-
 	return true;
 }
 
@@ -2958,32 +2979,51 @@ startCalibration()
 		{
 			if (PIPE[pipe].status == ENABLED)
 			{
-				(ui->radioButton_14->isChecked()) ? LOOP.runMode = SIMULATION_RUN : LOOP.runMode = TEMPRUN_MIN;
 				PIPE[pipe].isStartFreq = true;
       			QDir dir;
        			int fileCounter = 2;
 
-       			/// create file directory "g:/FULLCUT/FC" + "8756"
-       			if (!dir.exists(PIPE[pipe].mainDirPath)) dir.mkpath(PIPE[pipe].mainDirPath);
+				if (ui->radioButton_14->isChecked()) LOOP.runMode = SIMULATION_RUN;
+				else if (ui->radioButton_16->isChecked()) LOOP.runMode = INJECTION_RUN;
+				else LOOP.runMode = TEMPRUN_MIN;
+
+       			/// create directory "g:/FULLCUT/FC1234"
+       			if (LOOP.runMode == SIMULATION_RUN)
+				{
+					if (!dir.exists(PIPE[pipe].mainDirPath)) 
+					{
+						informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("No Simulation Directory Exists!!                     "),PIPE[pipe].mainDirPath);
+						onActionStop();
+						return;
+					}
+				}	
        			else
        			{
-           			while (1)
-           			{
-               			if (!dir.exists(PIPE[pipe].mainDirPath+"_"+QString::number(fileCounter))) 
-               			{
-                   			PIPE[pipe].mainDirPath += "_"+QString::number(fileCounter);
-                   			dir.mkpath(PIPE[pipe].mainDirPath);
-
-							if ((LOOP.runMode == TEMPRUN_MIN) && ((LOOP.cut == LOW) || !LOOP.isEEA)) setFileNameForNextStage(pipe, QString("AMB").append("_").append(QString::number(LOOP.minRefTemp)).append(LOOP.filExt));
-							else if ((LOOP.runMode == SIMULATION_RUN) && (LOOP.cut == LOW)) setFileNameForNextStage(pipe, QString("CALIBRAT").append("__").append(QString::number(LOOP.injectionTemp)).append(LOOP.simExt));
-							else if ((LOOP.runMode == SIMULATION_RUN) && (LOOP.cut == MID)) setFileNameForNextStage(pipe, QString("OIL").append("__").append(QString::number(LOOP.injectionTemp)).append(LOOP.simExt));
-							else LOOP.isCal = false;
-
-                   			break;
-               			}
-               			else fileCounter++;
-           			}
+					if (!dir.exists(PIPE[pipe].mainDirPath)) dir.mkpath(PIPE[pipe].mainDirPath);
+					else
+					{
+           				while (1)
+           				{
+               				if (!dir.exists(PIPE[pipe].mainDirPath+"_"+QString::number(fileCounter))) 
+               				{
+                   				//PIPE[pipe].mainDirPath += "_"+QString::number(fileCounter);
+                   				dir.rename(PIPE[pipe].mainDirPath,PIPE[pipe].mainDirPath + "_"+QString::number(fileCounter) ); // rename existing dir with "_?"
+                   				dir.mkpath(PIPE[pipe].mainDirPath);
+							
+                   				break;
+               				}
+               				else fileCounter++;
+           				}
+					}
        			}
+
+				/// set file name
+				if ((LOOP.runMode == TEMPRUN_MIN) && ((LOOP.cut == LOW) || !LOOP.isEEA)) setFileNameForNextStage(pipe, QString("AMB").append("_").append(QString::number(LOOP.minRefTemp)).append(LOOP.filExt));
+				else if ((LOOP.runMode == INJECTION_RUN) && (LOOP.cut == LOW)) setFileNameForNextStage(pipe, QString("CALIBRAT").append("__").append(QString::number(LOOP.injectionTemp)).append(LOOP.filExt));
+				else if ((LOOP.runMode == INJECTION_RUN) && (LOOP.cut == MID)) setFileNameForNextStage(pipe, QString("OIL").append("__").append(QString::number(LOOP.injectionTemp)).append(LOOP.filExt));
+				else if ((LOOP.runMode == SIMULATION_RUN) && (LOOP.cut == LOW)) setFileNameForNextStage(pipe, QString("CALIBRAT").append("__").append(QString::number(LOOP.injectionTemp)).append(LOOP.simExt));
+				else if ((LOOP.runMode == SIMULATION_RUN) && (LOOP.cut == MID)) setFileNameForNextStage(pipe, QString("OIL").append("__").append(QString::number(LOOP.injectionTemp)).append(LOOP.simExt));
+				else LOOP.isCal = false;
 			}
     	}
 
@@ -3094,16 +3134,14 @@ readPipe(const int pipe, const bool checkStability)
 	/// update chart	
 	if ((LOOP.runMode == INJECTION_RUN) || (LOOP.runMode == SIMULATION_RUN))
 	{
-    	LOOP.axisY->setTitleText("Watercut (%)");
-		updateGraph(pipe, PIPE[pipe].frequency, LOOP.masterWatercut, SERIES_1);
-		updateGraph(pipe, PIPE[pipe].frequency, PIPE[pipe].oilrp, SERIES_2);
+		updateGraph(pipe, PIPE[pipe].frequency, LOOP.masterWatercut, SERIES_WATERCUT);
+		updateGraph(pipe, PIPE[pipe].frequency, PIPE[pipe].oilrp, SERIES_RP);
 		delay(SLEEP_TIME);
 	}
 	else 
 	{
-    	LOOP.axisY->setTitleText("Temperature (°C)");
-		updateGraph(pipe, PIPE[pipe].frequency, LOOP.masterTemp, SERIES_1);
-		updateGraph(pipe, PIPE[pipe].frequency, PIPE[pipe].oilrp, SERIES_1);
+		updateGraph(pipe, PIPE[pipe].frequency, LOOP.masterTemp, SERIES_WATERCUT);
+		updateGraph(pipe, PIPE[pipe].frequency, PIPE[pipe].oilrp, SERIES_RP);
 		delay(SLEEP_TIME);
 	}
 
@@ -3176,6 +3214,10 @@ runTempRun()
 			{
 				LOOP.isAMB = false;
    				bool ok;
+   				updatePipeStability(ALL,NO_STABILITY_CHECK);
+
+				/// set y axis title
+    			LOOP.axisY->setTitleText("Temperature (°C)");
 
 				/// popup questions 
    				LOOP.operatorName = QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Operator's Name.")), QLineEdit::Normal," ", &ok);
@@ -3261,6 +3303,7 @@ runTempRun()
 			if (LOOP.isMinRef)
 			{
 				LOOP.isMinRef = false;
+   				updatePipeStability(ALL,NO_STABILITY_CHECK);
 
 				if (!isUserInputYes(QString("Set The Heat Exchanger Temperature"), QString::number(LOOP.maxRefTemp).append("°C")))
 				{
@@ -3305,6 +3348,7 @@ runTempRun()
 			if (LOOP.isMaxRef)
 			{
 				LOOP.isMaxRef = false;
+   				updatePipeStability(ALL,NO_STABILITY_CHECK);
 
 				if (!isUserInputYes(QString("Set The Heat Exchanger Temperature"), QString::number(LOOP.injectionTemp).append("°C")))
 				{
@@ -3368,6 +3412,9 @@ runInjection()
 	{   
 		if (LOOP.isInjection)
 		{
+			/// set y axis
+    		LOOP.axisY->setTitleText("Watercut (%)");
+
 			bool ok;
    			if (!isUserInputYes(QString("LOOP ")+QString::number(LOOP.loopNumber),"Please make sure there is enough water in the water injection bucket"))
 			{
@@ -3381,7 +3428,7 @@ runInjection()
 
 			for (int pipe = 0; pipe < 3; pipe++) 
 			{
-				if ((LOOP.runMode == SIMULATION_RUN) && (PIPE[pipe].status == ENABLED)) PIPE[pipe].status = DONE;
+				if (((LOOP.runMode == SIMULATION_RUN) || (LOOP.runMode == INJECTION_RUN)) && (PIPE[pipe].status == ENABLED)) PIPE[pipe].status = DONE;
 
 				if (PIPE[pipe].status == DONE) 
 				{
@@ -3397,7 +3444,7 @@ runInjection()
    		//if ((LOOP.oilRunStop->text().toDouble() >= LOOP.watercut) && (LOOP.oilPhaseInjectCounter <= MAX_PHASE_CHECKING))
    		if (LOOP.oilRunStop->text().toDouble() >= LOOP.watercut)
    		{
-			updateLoopStatus(LOOP.watercut, 0, injectionTime, injectionTime*LOOP.injectionWaterPumpRate/60);
+			if (!LOOP.isMaster) updateLoopStatus(LOOP.watercut, 0, injectionTime, injectionTime*LOOP.injectionWaterPumpRate/60);
 
 			//////////////////////////////
 			//// READ DATA AND UPDATE FILE 
@@ -3797,8 +3844,6 @@ setFileNameForNextStage(const int pipe, const QString nextFileId)
     PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+nextFileId);
     PIPE[pipe].freqStability = 0;
     PIPE[pipe].tempStability = 0;
-
-    updatePipeStability(ALL, NO_STABILITY_CHECK);
 }
 
 
@@ -4075,4 +4120,12 @@ createDataStream(const int pipe, QString & data_stream)
 	}
 
 	delay(SLEEP_TIME);
+}
+
+
+void 
+MainWindow::
+mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) LOOP.chart->zoomReset();
 }

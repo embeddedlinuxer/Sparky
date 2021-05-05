@@ -22,8 +22,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_MainWindow_t {
-    QByteArrayData data[78];
-    char stringdata0[1337];
+    QByteArrayData data[79];
+    char stringdata0[1359];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -66,50 +66,51 @@ QT_MOC_LITERAL(30, 461, 11), // "onActionOil"
 QT_MOC_LITERAL(31, 473, 16), // "onActionSettings"
 QT_MOC_LITERAL(32, 490, 13), // "onActionStart"
 QT_MOC_LITERAL(33, 504, 12), // "onActionStop"
-QT_MOC_LITERAL(34, 517, 13), // "onModeChanged"
-QT_MOC_LITERAL(35, 531, 19), // "onMasterPipeToggled"
-QT_MOC_LITERAL(36, 551, 12), // "runInjection"
-QT_MOC_LITERAL(37, 564, 10), // "runTempRun"
-QT_MOC_LITERAL(38, 575, 15), // "stopCalibration"
-QT_MOC_LITERAL(39, 591, 14), // "updateFileList"
-QT_MOC_LITERAL(40, 606, 19), // "createInjectionFile"
-QT_MOC_LITERAL(41, 626, 16), // "startCalibration"
-QT_MOC_LITERAL(42, 643, 15), // "onRtuPortActive"
-QT_MOC_LITERAL(43, 659, 16), // "changeSerialPort"
-QT_MOC_LITERAL(44, 676, 17), // "createTempRunFile"
-QT_MOC_LITERAL(45, 694, 22), // "initializeToolbarIcons"
-QT_MOC_LITERAL(46, 717, 13), // "clearMonitors"
-QT_MOC_LITERAL(47, 731, 20), // "updateRequestPreview"
-QT_MOC_LITERAL(48, 752, 18), // "updateRegisterView"
-QT_MOC_LITERAL(49, 771, 13), // "enableHexView"
-QT_MOC_LITERAL(50, 785, 17), // "sendModbusRequest"
-QT_MOC_LITERAL(51, 803, 17), // "onSendButtonPress"
-QT_MOC_LITERAL(52, 821, 16), // "pollForDataOnBus"
-QT_MOC_LITERAL(53, 838, 12), // "aboutQModBus"
-QT_MOC_LITERAL(54, 851, 17), // "onCheckBoxChecked"
-QT_MOC_LITERAL(55, 869, 17), // "onCheckBoxClicked"
-QT_MOC_LITERAL(56, 887, 11), // "resetStatus"
-QT_MOC_LITERAL(57, 899, 14), // "setStatusError"
-QT_MOC_LITERAL(58, 914, 20), // "onFloatButtonPressed"
-QT_MOC_LITERAL(59, 935, 22), // "onIntegerButtonPressed"
-QT_MOC_LITERAL(60, 958, 19), // "onCoilButtonPressed"
-QT_MOC_LITERAL(61, 978, 19), // "onReadButtonPressed"
-QT_MOC_LITERAL(62, 998, 20), // "onWriteButtonPressed"
-QT_MOC_LITERAL(63, 1019, 23), // "onEquationButtonPressed"
-QT_MOC_LITERAL(64, 1043, 11), // "loadCsvFile"
-QT_MOC_LITERAL(65, 1055, 15), // "loadCsvTemplate"
-QT_MOC_LITERAL(66, 1071, 16), // "onUploadEquation"
-QT_MOC_LITERAL(67, 1088, 18), // "onDownloadEquation"
-QT_MOC_LITERAL(68, 1107, 17), // "onUpdateRegisters"
-QT_MOC_LITERAL(69, 1125, 23), // "onDownloadButtonChecked"
-QT_MOC_LITERAL(70, 1149, 11), // "saveCsvFile"
-QT_MOC_LITERAL(71, 1161, 22), // "onEquationTableChecked"
-QT_MOC_LITERAL(72, 1184, 32), // "onUnlockFactoryDefaultBtnPressed"
-QT_MOC_LITERAL(73, 1217, 30), // "onLockFactoryDefaultBtnPressed"
-QT_MOC_LITERAL(74, 1248, 29), // "onUpdateFactoryDefaultPressed"
-QT_MOC_LITERAL(75, 1278, 19), // "updatePipeStability"
-QT_MOC_LITERAL(76, 1298, 18), // "readJsonConfigFile"
-QT_MOC_LITERAL(77, 1317, 19) // "writeJsonConfigFile"
+QT_MOC_LITERAL(34, 517, 21), // "onActionStopInjection"
+QT_MOC_LITERAL(35, 539, 13), // "onModeChanged"
+QT_MOC_LITERAL(36, 553, 19), // "onMasterPipeToggled"
+QT_MOC_LITERAL(37, 573, 12), // "runInjection"
+QT_MOC_LITERAL(38, 586, 10), // "runTempRun"
+QT_MOC_LITERAL(39, 597, 15), // "stopCalibration"
+QT_MOC_LITERAL(40, 613, 14), // "updateFileList"
+QT_MOC_LITERAL(41, 628, 19), // "createInjectionFile"
+QT_MOC_LITERAL(42, 648, 16), // "startCalibration"
+QT_MOC_LITERAL(43, 665, 15), // "onRtuPortActive"
+QT_MOC_LITERAL(44, 681, 16), // "changeSerialPort"
+QT_MOC_LITERAL(45, 698, 17), // "createTempRunFile"
+QT_MOC_LITERAL(46, 716, 22), // "initializeToolbarIcons"
+QT_MOC_LITERAL(47, 739, 13), // "clearMonitors"
+QT_MOC_LITERAL(48, 753, 20), // "updateRequestPreview"
+QT_MOC_LITERAL(49, 774, 18), // "updateRegisterView"
+QT_MOC_LITERAL(50, 793, 13), // "enableHexView"
+QT_MOC_LITERAL(51, 807, 17), // "sendModbusRequest"
+QT_MOC_LITERAL(52, 825, 17), // "onSendButtonPress"
+QT_MOC_LITERAL(53, 843, 16), // "pollForDataOnBus"
+QT_MOC_LITERAL(54, 860, 12), // "aboutQModBus"
+QT_MOC_LITERAL(55, 873, 17), // "onCheckBoxChecked"
+QT_MOC_LITERAL(56, 891, 17), // "onCheckBoxClicked"
+QT_MOC_LITERAL(57, 909, 11), // "resetStatus"
+QT_MOC_LITERAL(58, 921, 14), // "setStatusError"
+QT_MOC_LITERAL(59, 936, 20), // "onFloatButtonPressed"
+QT_MOC_LITERAL(60, 957, 22), // "onIntegerButtonPressed"
+QT_MOC_LITERAL(61, 980, 19), // "onCoilButtonPressed"
+QT_MOC_LITERAL(62, 1000, 19), // "onReadButtonPressed"
+QT_MOC_LITERAL(63, 1020, 20), // "onWriteButtonPressed"
+QT_MOC_LITERAL(64, 1041, 23), // "onEquationButtonPressed"
+QT_MOC_LITERAL(65, 1065, 11), // "loadCsvFile"
+QT_MOC_LITERAL(66, 1077, 15), // "loadCsvTemplate"
+QT_MOC_LITERAL(67, 1093, 16), // "onUploadEquation"
+QT_MOC_LITERAL(68, 1110, 18), // "onDownloadEquation"
+QT_MOC_LITERAL(69, 1129, 17), // "onUpdateRegisters"
+QT_MOC_LITERAL(70, 1147, 23), // "onDownloadButtonChecked"
+QT_MOC_LITERAL(71, 1171, 11), // "saveCsvFile"
+QT_MOC_LITERAL(72, 1183, 22), // "onEquationTableChecked"
+QT_MOC_LITERAL(73, 1206, 32), // "onUnlockFactoryDefaultBtnPressed"
+QT_MOC_LITERAL(74, 1239, 30), // "onLockFactoryDefaultBtnPressed"
+QT_MOC_LITERAL(75, 1270, 29), // "onUpdateFactoryDefaultPressed"
+QT_MOC_LITERAL(76, 1300, 19), // "updatePipeStability"
+QT_MOC_LITERAL(77, 1320, 18), // "readJsonConfigFile"
+QT_MOC_LITERAL(78, 1339, 19) // "writeJsonConfigFile"
 
     },
     "MainWindow\0connectionError\0\0msg\0"
@@ -125,7 +126,8 @@ QT_MOC_LITERAL(77, 1317, 19) // "writeJsonConfigFile"
     "onActionMinMaster\0onActionMaxMaster\0"
     "onActionDeltaMaster\0onActionDeltaMasterFinal\0"
     "onActionWater\0onActionOil\0onActionSettings\0"
-    "onActionStart\0onActionStop\0onModeChanged\0"
+    "onActionStart\0onActionStop\0"
+    "onActionStopInjection\0onModeChanged\0"
     "onMasterPipeToggled\0runInjection\0"
     "runTempRun\0stopCalibration\0updateFileList\0"
     "createInjectionFile\0startCalibration\0"
@@ -158,7 +160,7 @@ static const uint qt_meta_data_MainWindow[] = {
        8,       // revision
        0,       // classname
        0,    0, // classinfo
-      75,   14, // methods
+      76,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -166,83 +168,84 @@ static const uint qt_meta_data_MainWindow[] = {
        1,       // signalCount
 
  // signals: name, argc, parameters, tag, flags
-       1,    1,  389,    2, 0x06 /* Public */,
+       1,    1,  394,    2, 0x06 /* Public */,
 
  // slots: name, argc, parameters, tag, flags
-       4,    1,  392,    2, 0x08 /* Private */,
-       5,    1,  395,    2, 0x08 /* Private */,
-       6,    1,  398,    2, 0x08 /* Private */,
-       7,    0,  401,    2, 0x08 /* Private */,
-       8,    2,  402,    2, 0x08 /* Private */,
-       9,    0,  407,    2, 0x08 /* Private */,
-      10,    0,  408,    2, 0x08 /* Private */,
-      11,    0,  409,    2, 0x08 /* Private */,
-      12,    0,  410,    2, 0x08 /* Private */,
-      13,    0,  411,    2, 0x08 /* Private */,
-      14,    0,  412,    2, 0x08 /* Private */,
-      15,    0,  413,    2, 0x08 /* Private */,
-      16,    0,  414,    2, 0x08 /* Private */,
-      17,    0,  415,    2, 0x08 /* Private */,
-      18,    0,  416,    2, 0x08 /* Private */,
-      19,    0,  417,    2, 0x08 /* Private */,
-      20,    0,  418,    2, 0x08 /* Private */,
-      21,    0,  419,    2, 0x08 /* Private */,
-      22,    0,  420,    2, 0x08 /* Private */,
-      23,    0,  421,    2, 0x08 /* Private */,
-      24,    0,  422,    2, 0x08 /* Private */,
-      25,    0,  423,    2, 0x08 /* Private */,
-      26,    0,  424,    2, 0x08 /* Private */,
-      27,    0,  425,    2, 0x08 /* Private */,
-      28,    0,  426,    2, 0x08 /* Private */,
-      29,    0,  427,    2, 0x08 /* Private */,
-      30,    0,  428,    2, 0x08 /* Private */,
-      31,    0,  429,    2, 0x08 /* Private */,
-      32,    0,  430,    2, 0x08 /* Private */,
-      33,    0,  431,    2, 0x08 /* Private */,
-      34,    1,  432,    2, 0x08 /* Private */,
-      35,    1,  435,    2, 0x08 /* Private */,
-      36,    0,  438,    2, 0x08 /* Private */,
-      37,    0,  439,    2, 0x08 /* Private */,
-      38,    0,  440,    2, 0x08 /* Private */,
-      39,    3,  441,    2, 0x08 /* Private */,
-      40,    6,  448,    2, 0x08 /* Private */,
-      41,    0,  461,    2, 0x08 /* Private */,
-      42,    1,  462,    2, 0x08 /* Private */,
-      43,    1,  465,    2, 0x08 /* Private */,
-      44,    5,  468,    2, 0x08 /* Private */,
-      45,    0,  479,    2, 0x08 /* Private */,
-      46,    0,  480,    2, 0x08 /* Private */,
-      47,    0,  481,    2, 0x08 /* Private */,
-      48,    0,  482,    2, 0x08 /* Private */,
-      49,    0,  483,    2, 0x08 /* Private */,
-      50,    0,  484,    2, 0x08 /* Private */,
-      51,    0,  485,    2, 0x08 /* Private */,
-      52,    0,  486,    2, 0x08 /* Private */,
-      53,    0,  487,    2, 0x08 /* Private */,
-      54,    1,  488,    2, 0x08 /* Private */,
-      55,    1,  491,    2, 0x08 /* Private */,
-      56,    0,  494,    2, 0x08 /* Private */,
-      57,    1,  495,    2, 0x08 /* Private */,
-      58,    1,  498,    2, 0x08 /* Private */,
-      59,    1,  501,    2, 0x08 /* Private */,
-      60,    1,  504,    2, 0x08 /* Private */,
-      61,    1,  507,    2, 0x08 /* Private */,
-      62,    1,  510,    2, 0x08 /* Private */,
-      63,    0,  513,    2, 0x08 /* Private */,
-      64,    0,  514,    2, 0x08 /* Private */,
-      65,    0,  515,    2, 0x08 /* Private */,
-      66,    0,  516,    2, 0x08 /* Private */,
-      67,    0,  517,    2, 0x08 /* Private */,
-      68,    1,  518,    2, 0x08 /* Private */,
-      69,    1,  521,    2, 0x08 /* Private */,
-      70,    0,  524,    2, 0x08 /* Private */,
-      71,    1,  525,    2, 0x08 /* Private */,
-      72,    0,  528,    2, 0x08 /* Private */,
-      73,    0,  529,    2, 0x08 /* Private */,
-      74,    0,  530,    2, 0x08 /* Private */,
-      75,    2,  531,    2, 0x08 /* Private */,
-      76,    0,  536,    2, 0x08 /* Private */,
-      77,    0,  537,    2, 0x08 /* Private */,
+       4,    1,  397,    2, 0x08 /* Private */,
+       5,    1,  400,    2, 0x08 /* Private */,
+       6,    1,  403,    2, 0x08 /* Private */,
+       7,    0,  406,    2, 0x08 /* Private */,
+       8,    2,  407,    2, 0x08 /* Private */,
+       9,    0,  412,    2, 0x08 /* Private */,
+      10,    0,  413,    2, 0x08 /* Private */,
+      11,    0,  414,    2, 0x08 /* Private */,
+      12,    0,  415,    2, 0x08 /* Private */,
+      13,    0,  416,    2, 0x08 /* Private */,
+      14,    0,  417,    2, 0x08 /* Private */,
+      15,    0,  418,    2, 0x08 /* Private */,
+      16,    0,  419,    2, 0x08 /* Private */,
+      17,    0,  420,    2, 0x08 /* Private */,
+      18,    0,  421,    2, 0x08 /* Private */,
+      19,    0,  422,    2, 0x08 /* Private */,
+      20,    0,  423,    2, 0x08 /* Private */,
+      21,    0,  424,    2, 0x08 /* Private */,
+      22,    0,  425,    2, 0x08 /* Private */,
+      23,    0,  426,    2, 0x08 /* Private */,
+      24,    0,  427,    2, 0x08 /* Private */,
+      25,    0,  428,    2, 0x08 /* Private */,
+      26,    0,  429,    2, 0x08 /* Private */,
+      27,    0,  430,    2, 0x08 /* Private */,
+      28,    0,  431,    2, 0x08 /* Private */,
+      29,    0,  432,    2, 0x08 /* Private */,
+      30,    0,  433,    2, 0x08 /* Private */,
+      31,    0,  434,    2, 0x08 /* Private */,
+      32,    0,  435,    2, 0x08 /* Private */,
+      33,    0,  436,    2, 0x08 /* Private */,
+      34,    0,  437,    2, 0x08 /* Private */,
+      35,    1,  438,    2, 0x08 /* Private */,
+      36,    1,  441,    2, 0x08 /* Private */,
+      37,    0,  444,    2, 0x08 /* Private */,
+      38,    0,  445,    2, 0x08 /* Private */,
+      39,    0,  446,    2, 0x08 /* Private */,
+      40,    3,  447,    2, 0x08 /* Private */,
+      41,    6,  454,    2, 0x08 /* Private */,
+      42,    0,  467,    2, 0x08 /* Private */,
+      43,    1,  468,    2, 0x08 /* Private */,
+      44,    1,  471,    2, 0x08 /* Private */,
+      45,    5,  474,    2, 0x08 /* Private */,
+      46,    0,  485,    2, 0x08 /* Private */,
+      47,    0,  486,    2, 0x08 /* Private */,
+      48,    0,  487,    2, 0x08 /* Private */,
+      49,    0,  488,    2, 0x08 /* Private */,
+      50,    0,  489,    2, 0x08 /* Private */,
+      51,    0,  490,    2, 0x08 /* Private */,
+      52,    0,  491,    2, 0x08 /* Private */,
+      53,    0,  492,    2, 0x08 /* Private */,
+      54,    0,  493,    2, 0x08 /* Private */,
+      55,    1,  494,    2, 0x08 /* Private */,
+      56,    1,  497,    2, 0x08 /* Private */,
+      57,    0,  500,    2, 0x08 /* Private */,
+      58,    1,  501,    2, 0x08 /* Private */,
+      59,    1,  504,    2, 0x08 /* Private */,
+      60,    1,  507,    2, 0x08 /* Private */,
+      61,    1,  510,    2, 0x08 /* Private */,
+      62,    1,  513,    2, 0x08 /* Private */,
+      63,    1,  516,    2, 0x08 /* Private */,
+      64,    0,  519,    2, 0x08 /* Private */,
+      65,    0,  520,    2, 0x08 /* Private */,
+      66,    0,  521,    2, 0x08 /* Private */,
+      67,    0,  522,    2, 0x08 /* Private */,
+      68,    0,  523,    2, 0x08 /* Private */,
+      69,    1,  524,    2, 0x08 /* Private */,
+      70,    1,  527,    2, 0x08 /* Private */,
+      71,    0,  530,    2, 0x08 /* Private */,
+      72,    1,  531,    2, 0x08 /* Private */,
+      73,    0,  534,    2, 0x08 /* Private */,
+      74,    0,  535,    2, 0x08 /* Private */,
+      75,    0,  536,    2, 0x08 /* Private */,
+      76,    2,  537,    2, 0x08 /* Private */,
+      77,    0,  542,    2, 0x08 /* Private */,
+      78,    0,  543,    2, 0x08 /* Private */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::QString,    3,
@@ -253,6 +256,7 @@ static const uint qt_meta_data_MainWindow[] = {
     QMetaType::Void, QMetaType::Bool,    2,
     QMetaType::Void,
     QMetaType::Bool, QMetaType::QString, QMetaType::QString,    2,    2,
+    QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
@@ -364,50 +368,51 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 28: _t->onActionSettings(); break;
         case 29: _t->onActionStart(); break;
         case 30: _t->onActionStop(); break;
-        case 31: _t->onModeChanged((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 32: _t->onMasterPipeToggled((*reinterpret_cast< const bool(*)>(_a[1]))); break;
-        case 33: _t->runInjection(); break;
-        case 34: _t->runTempRun(); break;
-        case 35: _t->stopCalibration(); break;
-        case 36: _t->updateFileList((*reinterpret_cast< const QString(*)>(_a[1])),(*reinterpret_cast< const int(*)>(_a[2])),(*reinterpret_cast< const int(*)>(_a[3]))); break;
-        case 37: _t->createInjectionFile((*reinterpret_cast< const int(*)>(_a[1])),(*reinterpret_cast< const int(*)>(_a[2])),(*reinterpret_cast< const QString(*)>(_a[3])),(*reinterpret_cast< const QString(*)>(_a[4])),(*reinterpret_cast< const QString(*)>(_a[5])),(*reinterpret_cast< const QString(*)>(_a[6]))); break;
-        case 38: _t->startCalibration(); break;
-        case 39: _t->onRtuPortActive((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 40: _t->changeSerialPort((*reinterpret_cast< int(*)>(_a[1]))); break;
-        case 41: _t->createTempRunFile((*reinterpret_cast< const int(*)>(_a[1])),(*reinterpret_cast< const QString(*)>(_a[2])),(*reinterpret_cast< const QString(*)>(_a[3])),(*reinterpret_cast< const QString(*)>(_a[4])),(*reinterpret_cast< const int(*)>(_a[5]))); break;
-        case 42: _t->initializeToolbarIcons(); break;
-        case 43: _t->clearMonitors(); break;
-        case 44: _t->updateRequestPreview(); break;
-        case 45: _t->updateRegisterView(); break;
-        case 46: _t->enableHexView(); break;
-        case 47: _t->sendModbusRequest(); break;
-        case 48: _t->onSendButtonPress(); break;
-        case 49: _t->pollForDataOnBus(); break;
-        case 50: _t->aboutQModBus(); break;
-        case 51: _t->onCheckBoxChecked((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 52: _t->onCheckBoxClicked((*reinterpret_cast< const bool(*)>(_a[1]))); break;
-        case 53: _t->resetStatus(); break;
-        case 54: _t->setStatusError((*reinterpret_cast< const QString(*)>(_a[1]))); break;
-        case 55: _t->onFloatButtonPressed((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 56: _t->onIntegerButtonPressed((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 57: _t->onCoilButtonPressed((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 58: _t->onReadButtonPressed((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 59: _t->onWriteButtonPressed((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 60: _t->onEquationButtonPressed(); break;
-        case 61: _t->loadCsvFile(); break;
-        case 62: _t->loadCsvTemplate(); break;
-        case 63: _t->onUploadEquation(); break;
-        case 64: _t->onDownloadEquation(); break;
-        case 65: _t->onUpdateRegisters((*reinterpret_cast< const bool(*)>(_a[1]))); break;
-        case 66: _t->onDownloadButtonChecked((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 67: _t->saveCsvFile(); break;
-        case 68: _t->onEquationTableChecked((*reinterpret_cast< bool(*)>(_a[1]))); break;
-        case 69: _t->onUnlockFactoryDefaultBtnPressed(); break;
-        case 70: _t->onLockFactoryDefaultBtnPressed(); break;
-        case 71: _t->onUpdateFactoryDefaultPressed(); break;
-        case 72: _t->updatePipeStability((*reinterpret_cast< const int(*)>(_a[1])),(*reinterpret_cast< const bool(*)>(_a[2]))); break;
-        case 73: _t->readJsonConfigFile(); break;
-        case 74: _t->writeJsonConfigFile(); break;
+        case 31: _t->onActionStopInjection(); break;
+        case 32: _t->onModeChanged((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 33: _t->onMasterPipeToggled((*reinterpret_cast< const bool(*)>(_a[1]))); break;
+        case 34: _t->runInjection(); break;
+        case 35: _t->runTempRun(); break;
+        case 36: _t->stopCalibration(); break;
+        case 37: _t->updateFileList((*reinterpret_cast< const QString(*)>(_a[1])),(*reinterpret_cast< const int(*)>(_a[2])),(*reinterpret_cast< const int(*)>(_a[3]))); break;
+        case 38: _t->createInjectionFile((*reinterpret_cast< const int(*)>(_a[1])),(*reinterpret_cast< const int(*)>(_a[2])),(*reinterpret_cast< const QString(*)>(_a[3])),(*reinterpret_cast< const QString(*)>(_a[4])),(*reinterpret_cast< const QString(*)>(_a[5])),(*reinterpret_cast< const QString(*)>(_a[6]))); break;
+        case 39: _t->startCalibration(); break;
+        case 40: _t->onRtuPortActive((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 41: _t->changeSerialPort((*reinterpret_cast< int(*)>(_a[1]))); break;
+        case 42: _t->createTempRunFile((*reinterpret_cast< const int(*)>(_a[1])),(*reinterpret_cast< const QString(*)>(_a[2])),(*reinterpret_cast< const QString(*)>(_a[3])),(*reinterpret_cast< const QString(*)>(_a[4])),(*reinterpret_cast< const int(*)>(_a[5]))); break;
+        case 43: _t->initializeToolbarIcons(); break;
+        case 44: _t->clearMonitors(); break;
+        case 45: _t->updateRequestPreview(); break;
+        case 46: _t->updateRegisterView(); break;
+        case 47: _t->enableHexView(); break;
+        case 48: _t->sendModbusRequest(); break;
+        case 49: _t->onSendButtonPress(); break;
+        case 50: _t->pollForDataOnBus(); break;
+        case 51: _t->aboutQModBus(); break;
+        case 52: _t->onCheckBoxChecked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 53: _t->onCheckBoxClicked((*reinterpret_cast< const bool(*)>(_a[1]))); break;
+        case 54: _t->resetStatus(); break;
+        case 55: _t->setStatusError((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 56: _t->onFloatButtonPressed((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 57: _t->onIntegerButtonPressed((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 58: _t->onCoilButtonPressed((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 59: _t->onReadButtonPressed((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 60: _t->onWriteButtonPressed((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 61: _t->onEquationButtonPressed(); break;
+        case 62: _t->loadCsvFile(); break;
+        case 63: _t->loadCsvTemplate(); break;
+        case 64: _t->onUploadEquation(); break;
+        case 65: _t->onDownloadEquation(); break;
+        case 66: _t->onUpdateRegisters((*reinterpret_cast< const bool(*)>(_a[1]))); break;
+        case 67: _t->onDownloadButtonChecked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 68: _t->saveCsvFile(); break;
+        case 69: _t->onEquationTableChecked((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 70: _t->onUnlockFactoryDefaultBtnPressed(); break;
+        case 71: _t->onLockFactoryDefaultBtnPressed(); break;
+        case 72: _t->onUpdateFactoryDefaultPressed(); break;
+        case 73: _t->updatePipeStability((*reinterpret_cast< const int(*)>(_a[1])),(*reinterpret_cast< const bool(*)>(_a[2]))); break;
+        case 74: _t->readJsonConfigFile(); break;
+        case 75: _t->writeJsonConfigFile(); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -451,13 +456,13 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 75)
+        if (_id < 76)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 75;
+        _id -= 76;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 75)
+        if (_id < 76)
             *reinterpret_cast<int*>(_a[0]) = -1;
-        _id -= 75;
+        _id -= 76;
     }
     return _id;
 }

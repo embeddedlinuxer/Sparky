@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     do {
            QApplication a(argc, argv);
 
-           QPixmap pixmap(":/splash.png"); //Insert your splash page image here
+           QPixmap pixmap(":/splash_2.png"); //Insert your splash page image here
            QSplashScreen splash(pixmap);
            splash.show();
 
