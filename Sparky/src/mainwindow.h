@@ -440,9 +440,11 @@ protected:
 
 private slots:
 
+	/// graph 
 	void toggleLineView_P1(bool); 
     void toggleLineView_P2(bool); 
     void toggleLineView_P3(bool); 
+	void onViewYAxisData(bool);
 
     /// config menu
 	void readMasterPipe();

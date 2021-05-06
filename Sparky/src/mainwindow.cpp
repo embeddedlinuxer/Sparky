@@ -997,11 +997,38 @@ toggleLineView_P3(bool b)
 
 void
 MainWindow::
+onViewYAxisData(const bool isTrue)
+{
+	if (ui->radioButton_17->isChecked()) 
+	{
+		for (int pipe=0; pipe<3; pipe++) PIPE[pipe].series->show();
+		for (int pipe=0; pipe<3; pipe++) PIPE[pipe].series_2->show();
+	}
+
+	else if (ui->radioButton_18->isChecked()) 
+	{
+		for (int pipe=0; pipe<3; pipe++) PIPE[pipe].series->show();
+		for (int pipe=0; pipe<3; pipe++) PIPE[pipe].series_2->hide();
+	}
+	else
+	{
+		for (int pipe=0; pipe<3; pipe++) PIPE[pipe].series->hide();
+		for (int pipe=0; pipe<3; pipe++) PIPE[pipe].series_2->show();
+	}
+}
+
+
+void
+MainWindow::
 connectLineView()
 {
     connect(ui->checkBox_19, SIGNAL(clicked(bool)), this, SLOT(toggleLineView_P1(bool)));
     connect(ui->checkBox_20, SIGNAL(clicked(bool)), this, SLOT(toggleLineView_P2(bool)));
     connect(ui->checkBox_21, SIGNAL(clicked(bool)), this, SLOT(toggleLineView_P3(bool)));
+
+    connect(ui->radioButton_17, SIGNAL(toggled(bool)), this, SLOT(onViewYAxisData(bool)));
+    connect(ui->radioButton_18, SIGNAL(toggled(bool)), this, SLOT(onViewYAxisData(bool)));
+    connect(ui->radioButton_19, SIGNAL(toggled(bool)), this, SLOT(onViewYAxisData(bool)));
 }
 
 
