@@ -16,5 +16,6 @@
         <file>water.png</file>
         <file>stopInjection.png</file>
         <file>splash_2.png</file>
+        <file>forward.png</file>
     </qresource>
 </RCC>

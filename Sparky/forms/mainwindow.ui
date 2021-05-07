@@ -4666,14 +4666,14 @@
       <widget class="QRadioButton" name="radioButton_18">
        <property name="geometry">
         <rect>
-         <x>60</x>
+         <x>70</x>
          <y>20</y>
-         <width>61</width>
+         <width>51</width>
          <height>21</height>
         </rect>
        </property>
        <property name="text">
-        <string>WC/TMP</string>
+        <string>WC</string>
        </property>
       </widget>
       <widget class="QRadioButton" name="radioButton_19">
@@ -4771,7 +4771,7 @@
     <string>Settings</string>
    </property>
    <property name="toolTip">
-    <string>Change Configuration</string>
+    <string>Loop Configuration</string>
    </property>
   </action>
   <action name="actionStart">
@@ -4783,7 +4783,7 @@
     <string>Start</string>
    </property>
    <property name="toolTip">
-    <string>Calibration Start</string>
+    <string>Start Calibration</string>
    </property>
   </action>
   <action name="actionConnect">
@@ -4815,16 +4815,17 @@
     <string>About QModBus</string>
    </property>
   </action>
-  <action name="actionStop">
+  <action name="actionPause">
    <property name="icon">
     <iconset resource="../data/sparky.qrc">
-     <normaloff>:/pause.png</normaloff>:/pause.png</iconset>
+     <normaloff>:/pause.png</normaloff>
+     <activeon>:/stop.png</activeon>:/pause.png</iconset>
    </property>
    <property name="text">
     <string>Stop</string>
    </property>
    <property name="toolTip">
-    <string>Calibration Stop</string>
+    <string>Pause Calibration</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+C</string>
@@ -5270,6 +5271,30 @@
    </property>
    <property name="toolTip">
     <string>Stop Injection</string>
+   </property>
+  </action>
+  <action name="actionSkip">
+   <property name="icon">
+    <iconset resource="../data/sparky.qrc">
+     <normaloff>:/forward.png</normaloff>:/forward.png</iconset>
+   </property>
+   <property name="text">
+    <string>Skip</string>
+   </property>
+   <property name="toolTip">
+    <string>Skip Current and Move To The  Next Stage</string>
+   </property>
+  </action>
+  <action name="actionStop">
+   <property name="icon">
+    <iconset resource="../data/sparky.qrc">
+     <normaloff>:/stop.png</normaloff>:/stop.png</iconset>
+   </property>
+   <property name="text">
+    <string>Stop</string>
+   </property>
+   <property name="toolTip">
+    <string>Cancel Calibration</string>
    </property>
   </action>
  </widget>

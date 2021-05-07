@@ -59,7 +59,8 @@
 /// progress bar type
 #define F_BAR                       1
 #define T_BAR                       0
-   
+  
+#define BLANK						"                                                 " 
 /// calibration file names
 #define HIGH                        "\\HIGHCUT\\HC"
 #define FULL                        "\\FULLCUT\\FC" 
@@ -87,12 +88,15 @@
 #define LOCAL_SERVER                "LocalServer"
 
 /// LOOP.runMode
-#define STOP_CALIBRATION			-1	
 #define TEMPRUN_MIN					1	
 #define TEMPRUN_HIGH				2	
 #define TEMPRUN_INJECTION			3	
-#define INJECTION_RUN				4
-#define SIMULATION_RUN				5
+#define TEMPRUN_ONLY				4	
+#define INJECTION_RUN				5	
+#define SIMULATION_RUN				6	
+#define SKIP_CALIBRATION			7	
+#define PAUSE_CALIBRATION			8	
+#define STOP_CALIBRATION			9
 
 //////////////////////////
 /////// JSON KEYS ////////
@@ -251,6 +255,7 @@ typedef struct PIPE_OBJECT
 
 typedef struct LOOP_OBJECT 
 {
+	bool isInjectionOn;
 	bool isMaster;
     bool isCal;
 	bool isEEA;
@@ -337,15 +342,15 @@ typedef struct LOOP_OBJECT
     QValueAxis * axisY;
     QValueAxis * axisY2;
 
-	LOOP_OBJECT() : isMaster(true), isCal(true), isEEA(false), isAMB(1), isMinRef(1), isMaxRef(1), isInjection(1), cut(MID), masterMin(0), masterMax(0),masterDelta(0), masterDeltaFinal(0), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), runMode(0), injectionTemp(0), oilPhaseInjectCounter(0), xDelay(0), loopNumber(0), maxInjectionWater(80), maxInjectionOil(200), portIndex(0), maxGraphDataPoint(0), yFreq(0), zTemp(0), intervalOilPump(0.25), intervalBigPump(1), intervalSmallPump(0.25), filExt(""), calExt(""), adjExt(""),rolExt(""),  simExt(".SIM"), operatorName(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), ID_MASTER_WATERCUT(15), ID_MASTER_SALINITY(21), ID_MASTER_OIL_ADJUST(23), ID_MASTER_OIL_RP(115), ID_MASTER_TEMPERATURE(5),ID_MASTER_FREQ(111),ID_MASTER_PHASE(17), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(0), masterSalinity(0), masterOilAdj(0), masterOilRp(0), masterFreq(0), masterTemp(0), masterPhase(1), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY2(new QValueAxis) {};
+	LOOP_OBJECT() : isInjectionOn(false), isMaster(true), isCal(true), isEEA(false), isAMB(1), isMinRef(1), isMaxRef(1), isInjection(1), cut(MID), masterMin(0), masterMax(0),masterDelta(0), masterDeltaFinal(0), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), runMode(0), injectionTemp(0), oilPhaseInjectCounter(0), xDelay(0), loopNumber(0), maxInjectionWater(80), maxInjectionOil(200), portIndex(0), maxGraphDataPoint(0), yFreq(0), zTemp(0), intervalOilPump(0.25), intervalBigPump(1), intervalSmallPump(0.25), filExt(""), calExt(""), adjExt(""),rolExt(""),  simExt(".SIM"), operatorName(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), ID_MASTER_WATERCUT(15), ID_MASTER_SALINITY(21), ID_MASTER_OIL_ADJUST(23), ID_MASTER_OIL_RP(115), ID_MASTER_TEMPERATURE(5),ID_MASTER_FREQ(111),ID_MASTER_PHASE(17), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(0), masterSalinity(0), masterOilAdj(0), masterOilRp(0), masterFreq(0), masterTemp(0), masterPhase(1), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY2(new QValueAxis) {};
 
 	~LOOP_OBJECT()
 	{
 		if (chart) delete chart;
 		if (chartView) delete chartView;
-		if (axisX) delete axisX;
+/*		if (axisX) delete axisX;
 		if (axisY) delete axisY;
-		if (axisY2) delete axisY2;
+		if (axisY2) delete axisY2;*/
         if (loopVolume) delete loopVolume;
         if (saltStart) delete saltStart;
         if (saltStop) delete saltStop;
@@ -474,7 +479,10 @@ private slots:
     void onActionSettings();
     void onActionStart();
     void onActionStop();
+    void onActionSkip();
+    void onActionPause();
     void onActionStopInjection();
+    void onActionStartInjection();
     void onModeChanged(bool);
 	void onMasterPipeToggled(const bool);
     void runInjection();
