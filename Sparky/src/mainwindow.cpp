@@ -118,6 +118,8 @@ MainWindow::MainWindow( QWidget * _parent ) :
     PIPE[2].temp->setStyleSheet("color: black;");
     PIPE[2].reflectedPower->setStyleSheet("color: black;");
 
+	displayPipeReading(ALL,0,0,0,0,0);
+	updateCurrentStage(RED,"S T O P");
 }
 
 
@@ -179,8 +181,8 @@ initializeToolbarIcons() {
     ui->toolBar->addAction(ui->actionPause);
 	ui->actionStart->setVisible(true);
 	ui->actionPause->setVisible(false);
-    ui->toolBar->addAction(ui->actionStop);
     ui->toolBar->addAction(ui->actionSkip);
+    ui->toolBar->addAction(ui->actionStop);
 
     ui->toolBar->addSeparator();
     ui->toolBar->addAction(ui->actionReadMasterPipe);
@@ -893,7 +895,7 @@ connectToolbar()
     connect(ui->actionOpen, SIGNAL(triggered()),this,SLOT(loadCsvFile()));
     connect(ui->actionSettings, SIGNAL(triggered()),this,SLOT(onActionSettings()));
     connect(ui->actionStart, SIGNAL(triggered()),this,SLOT(onActionStart()));
-    connect(ui->actionStop, SIGNAL(triggered()),this,SLOT(onActionStop()));
+    connect(ui->actionStop, SIGNAL(triggered()),this,SLOT(onActionStopPressed()));
     connect(ui->actionPause, SIGNAL(triggered()),this,SLOT(onActionPause()));
     connect(ui->actionReadMasterPipe, SIGNAL(triggered()),this,SLOT(readMasterPipe()));
     connect(ui->actionStopInjection, SIGNAL(triggered()),this,SLOT(onActionStopInjection()));
@@ -1133,10 +1135,6 @@ writeJsonConfigFile(void)
     file.open(QIODevice::WriteOnly);
 
     QJsonObject json;
-
-    /// file server
-    json[MAIN_SERVER] = m_mainServer;
-    json[LOCAL_SERVER] = m_localServer;
 
     LOOP.injectionOilPumpRate = ui->lineEdit_27->text().toDouble();
     LOOP.injectionWaterPumpRate = ui->lineEdit_28->text().toDouble();
@@ -1613,6 +1611,7 @@ MainWindow::
 onActionStartInjection()
 {
 	LOOP.isInjectionOn = true;
+	LOOP.isTempRunSkip = false;
     inject(COIL_WATER_PUMP,LOOP.isInjectionOn);
 }
 
@@ -1622,26 +1621,33 @@ onActionStopInjection()
 {
 	LOOP.isInjectionOn = false;
     inject(COIL_WATER_PUMP,LOOP.isInjectionOn);
+	LOOP.isTempRunSkip = false;
 }
 
 void
 MainWindow::
 onActionSkip()
 {
-	if (LOOP.runMode == SKIP_CALIBRATION) return;
+	if ((LOOP.runMode != TEMPRUN_MIN) && (LOOP.runMode != TEMPRUN_HIGH) && (LOOP.runMode != TEMPRUN_INJECTION)) return;
+	if (isUserInputYes("Will Skip Current Temp Run Stage", "Do You Want To Skip?")) LOOP.isTempRunSkip = true;
+	if (LOOP.isPause == true)
+	{
+		ui->actionStart->setVisible(false);
+		ui->actionPause->setVisible(true);
+	
+		LOOP.isPause = false;
+	}
 }
 
 void
 MainWindow::
 onActionPause()
 {
-    if ((LOOP.runMode == INJECTION_RUN) || (LOOP.runMode == SIMULATION_RUN)) 
-	{
-		ui->actionStart->setVisible(true);
-		ui->actionPause->setVisible(false);
+	ui->actionStart->setVisible(true);
+	ui->actionPause->setVisible(false);
 
-		LOOP.runMode = PAUSE_CALIBRATION;
-	}
+	LOOP.isPause = true;;
+	LOOP.isTempRunSkip = false;
 
 	return;
 }
@@ -1650,8 +1656,19 @@ void
 MainWindow::
 onActionStart()
 {
-    /// calibration configuration
+	ui->actionStart->setVisible(false);
+	ui->actionPause->setVisible(true);
+
+	LOOP.isTempRunSkip = false;
+
+	if (LOOP.isPause == true)
+	{	
+		LOOP.isPause = false;
+		return;
+	}
+
     writeJsonConfigFile();
+
     ui->groupBox_18->hide();
     ui->groupBox_35->hide();
     ui->groupBox_34->hide();
@@ -1680,18 +1697,26 @@ onActionStart()
     ui->groupBox_6->setEnabled(false);
     ui->groupBox_65->setEnabled(false);
 
-	ui->actionStart->setVisible(false);
-	ui->actionPause->setVisible(true);
-
     /// start calibration
     startCalibration();
 }
 
 void
 MainWindow::
+onActionStopPressed()
+{
+	if (LOOP.runMode == STOP_CALIBRATION) return;
+	if (isUserInputYes("Will Cancel Calibration.", "Do You Want To Cancel?")) onActionStop();
+}
+
+void
+MainWindow::
 onActionStop()
 {
+	updateCurrentStage(RED,"S T O P");
     updateLoopTabIcon(false);
+	LOOP.isTempRunSkip = false;
+	LOOP.isPause = false;
 
     ui->tabWidget->setTabEnabled(1,true);
     ui->tabWidget->setTabEnabled(2,true);
@@ -1713,6 +1738,8 @@ onActionStop()
 
     if (LOOP.isInjectionOn) onActionStopInjection();
     stopCalibration();
+
+	displayPipeReading(ALL,0,0,0,0,0);
 }
 
 void
@@ -2848,6 +2875,11 @@ readLoopConfiguration()
 
     /// run mode
     if (ui->radioButton_14->isChecked()) LOOP.runMode = SIMULATION_RUN;
+    else if (ui->radioButton_15->isChecked()) 
+	{
+		LOOP.isTempRunOnly = true;
+		LOOP.runMode = TEMPRUN_MIN;
+	}
     else if (ui->radioButton_16->isChecked()) LOOP.runMode = INJECTION_RUN;
     else LOOP.runMode = TEMPRUN_MIN;
 
@@ -2909,8 +2941,9 @@ validateSerialNumber(modbus_t * serialModbus)
             memset( dest, 0, 1024 );
             modbus_set_slave( serialModbus, PIPE[pipe].slave->text().toInt());
 
-			/// coil unlock FCT registers 
-            sendCalibrationRequest(COIL_W, serialModbus, FUNC_WRITE_COIL, 999, BYTE_READ_COIL, ret, dest, dest16, is16Bit, writeAccess, funcType);
+			/// unlock FCT registers
+            modbus_write_bit(serialModbus,999,1);
+
 			if (isModbusTransmissionFailed) 
 			{
         		informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"Invalid Seial Port Connection!");
@@ -2924,9 +2957,6 @@ validateSerialNumber(modbus_t * serialModbus)
             if (*dest16 != PIPE[pipe].slave->text().toInt())
             {
         		informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"Invalid Seial Number!");
-
-                /// lock FCT registers
-                modbus_write_bit(serialModbus,999,0);
 
                 /// cancel calibration
                 LOOP.isCal = false;
@@ -2968,6 +2998,10 @@ prepareCalibration()
     LOOP.isMaxRef = true;
     LOOP.isInjection = true;
     LOOP.isInjectionOn = false;
+	LOOP.isPause = false;
+    LOOP.isTempRunSkip = false;
+    LOOP.isInjectionOn = false;
+	LOOP.isTempRunOnly = false;
 
     /// LOOP configuration
     readLoopConfiguration();
@@ -3056,7 +3090,6 @@ startCalibration()
                 QDir dir;
                 int fileCounter = 2;
 
-
                 /// create directory "g:/FULLCUT/FC1234"
                 if (LOOP.runMode == SIMULATION_RUN)
                 {
@@ -3100,15 +3133,43 @@ startCalibration()
         /// start calibration
         while (LOOP.isCal)
         {
-            if (LOOP.runMode == TEMPRUN_MIN) runTempRun();
-            else if (LOOP.runMode == TEMPRUN_HIGH) runTempRun();
-            else if (LOOP.runMode == TEMPRUN_INJECTION) runTempRun();
-            else if ((LOOP.runMode == INJECTION_RUN) || (LOOP.runMode == SIMULATION_RUN)) runInjection();
-			else if (LOOP.runMode == PAUSE_CALIBRATION) {}  // do nothing during pause_calibration
-            else
+			if (!LOOP.isPause)
 			{
-				onActionStop();
-				return;
+            	if (LOOP.runMode == TEMPRUN_MIN) 
+				{
+					updateCurrentStage(BLACK,"TEMPRUN_MIN");
+					runTempRun();
+				}
+            	else if (LOOP.runMode == TEMPRUN_HIGH) 
+				{
+					updateCurrentStage(BLACK,"TEMPRUN_HIGH");
+					runTempRun();
+				}
+            	else if (LOOP.runMode == TEMPRUN_INJECTION) 
+				{	
+					updateCurrentStage(BLACK,"TEMPRUN_INJECT");
+					runTempRun();
+				}
+            	else if (LOOP.runMode == INJECTION_RUN) 
+				{
+					updateCurrentStage(BLACK,"INJECT-STANDBY");
+					runInjection();
+				}
+				else if (LOOP.runMode == SIMULATION_RUN)
+				{
+					updateCurrentStage(BLUE,"SIMULATION");
+					runInjection();
+				}
+            	else
+				{
+					updateCurrentStage(RED,"S T O P");
+					onActionStop();
+					return;
+				}
+			}
+			else
+			{
+				updateCurrentStage(RED,"P A U S E");
 			}
 
             delay(LOOP.xDelay);
@@ -3121,6 +3182,13 @@ startCalibration()
     }
 }
 
+void
+MainWindow::
+updateCurrentStage(const QString color, const QString label)
+{
+	ui->runModeStatus->setStyleSheet(color);
+	ui->runModeStatus->setText(label); 	
+}
 
 void
 MainWindow::
@@ -3354,7 +3422,17 @@ runTempRun()
             /// start reading values and write to file
             for (int pipe = 0; pipe < 3; pipe++)
             {
-                /// validate stability
+				/// skip to next temprun stage?
+				if (LOOP.isTempRunSkip)
+				{
+					if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked()) 
+					{
+						PIPE[pipe].tempStability = 5;
+						PIPE[pipe].freqStability = 5;
+					}
+				}
+
+                /// log data 
                 if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
                 {
                     (abs(LOOP.minRefTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
@@ -3367,7 +3445,11 @@ runTempRun()
                     {
                         PIPE[pipe].status = DONE; /// stop reading pipe upon reaching stability
                         setFileNameForNextStage(pipe, QString::number(LOOP.minRefTemp).append("_").append(QString::number(LOOP.maxRefTemp)).append(LOOP.filExt));
-                        if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) LOOP.runMode = TEMPRUN_HIGH;
+                        if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) 
+						{
+							LOOP.runMode = TEMPRUN_HIGH;
+							LOOP.isTempRunSkip = false;
+						}
                     }
                 }
             }
@@ -3400,6 +3482,16 @@ runTempRun()
 
             for (int pipe = 0; pipe < 3; pipe++)
             {
+				/// skip to next temprun stage?
+				if (LOOP.isTempRunSkip)
+				{
+					if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked()) 
+					{
+						PIPE[pipe].tempStability = 5;
+						PIPE[pipe].freqStability = 5;
+					}
+				}
+
                 if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
                 {
                     (abs(LOOP.maxRefTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
@@ -3412,7 +3504,11 @@ runTempRun()
                     {
                         PIPE[pipe].status = DONE;
                         setFileNameForNextStage(pipe, QString::number(LOOP.maxRefTemp).append("_").append(QString::number(LOOP.injectionTemp)).append(LOOP.filExt));
-                        if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) LOOP.runMode = TEMPRUN_INJECTION;
+                        if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) 
+						{
+							LOOP.runMode = TEMPRUN_INJECTION;
+							LOOP.isTempRunSkip = false;
+						}	
                     }
                 }
             }
@@ -3445,6 +3541,16 @@ runTempRun()
 
             for (int pipe = 0; pipe < 3; pipe++)
             {
+				/// skip to next temprun stage?
+				if (LOOP.isTempRunSkip)
+				{
+					if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked()) 
+					{
+						PIPE[pipe].tempStability = 5;
+						PIPE[pipe].freqStability = 5;
+					}
+				}
+
                 if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
                 {
                     (abs(LOOP.injectionTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
@@ -3455,16 +3561,16 @@ runTempRun()
                 {
                     if (PIPE[pipe].status == ENABLED)
                     {
-                        PIPE[pipe].status = DONE; // pipe temprun stops at reaching stability
+                        PIPE[pipe].status = DONE;
                         if (LOOP.cut == LOW) setFileNameForNextStage(pipe,"CALIBRAT.LCI");
                         else if (LOOP.cut == MID) setFileNameForNextStage(pipe,QString("OIL__").append(QString::number(LOOP.injectionTemp)).append(".MCI"));
                         PIPE[pipe].frequency_start = PIPE[pipe].frequency;
 
                         /// check condition for injection
-
                         if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED))
                         {
-                            if (ui->radioButton_15->isChecked()) informUser("Temp Run Has Finished.", "Calibration Stopped" );
+							LOOP.isTempRunSkip = false;
+                            if (LOOP.isTempRunOnly) informUser("Temp Run Has Finished.", "Calibration Stopped" ); // TEMPRUN_ONLY mode
                             else LOOP.runMode = INJECTION_RUN;
                         }
                     }
@@ -3479,6 +3585,8 @@ void
 MainWindow::
 runInjection()
 {
+	if (LOOP.runMode == STOP_CALIBRATION) return;
+
     static double injectionTime = 0;
     static double totalInjectionTime = 0;
     static double accumulatedInjectionTime_prev = 0;
@@ -3497,7 +3605,7 @@ runInjection()
             LOOP.axisY->setTitleText("Watercut (%)");
 
             bool ok;
-            if (!isUserInputYes(QString("LOOP ")+QString::number(LOOP.loopNumber),"Please make sure there is enough water in the water injection bucket"))
+            if (!isUserInputYes(QString("INJECTION WILL START IN LOOP ")+QString::number(LOOP.loopNumber),"Please make sure there is enough water in the water injection bucket"))
             {
                 onActionStop();
                 return;
@@ -3556,6 +3664,8 @@ runInjection()
             ///////////////////////////////////////
             if (LOOP.isMaster)
             {
+				if (LOOP.runMode == STOP_CALIBRATION) return;
+
                 int masterInjectionStartTime = PIPE[0].etimer->elapsed()/1000;
 
                 /// start injection	upon master pipe phase
@@ -3615,8 +3725,10 @@ runInjection()
             ///////////////////////////////////////
             //// INJECT WATER IN PUMP RATE MODE
             ///////////////////////////////////////
-            else
+            else 
             {
+				if (LOOP.runMode == STOP_CALIBRATION) return;
+
                 /// next injection time and update totalInjectionTime
                 double accumulatedInjectionTime = -(LOOP.loopVolume->text().toDouble()/(LOOP.injectionWaterPumpRate/60))*log((1-(LOOP.watercut - LOOP.oilRunStart->text().toDouble())/100));
                 injectionTime = accumulatedInjectionTime - accumulatedInjectionTime_prev;
@@ -3912,6 +4024,8 @@ inject(const int coil,const bool value)
 {
     uint8_t dest[1024];
 
+	(value) ? updateCurrentStage(ORANGE,"INJECT") : updateCurrentStage(BLACK,"INJECT-STANDBY");
+
     /// set slave
     memset( dest, 0, 1024 );
     modbus_set_slave(LOOP.serialModbus, CONTROLBOX_SLAVE);
@@ -4152,6 +4266,17 @@ displayPipeReading(const int pipe, const double watercut, const double startfreq
         PIPE[pipe].temp->setText(QString("%1").arg(temp,7,'f',2,' '));
         PIPE[pipe].reflectedPower->setText(QString("%1").arg(rp,7,'f',3,' '));
         if (freq > 100) PIPE[pipe].isStartFreq = false;
+    }
+	else if (pipe == ALL)
+    {
+		for (int i=0; i<ALL; i++)
+		{ 
+			PIPE[i].wc->setText("0");
+        	PIPE[i].startFreq->setText("0");
+        	PIPE[i].freq->setText("0");
+        	PIPE[i].temp->setText("0");
+        	PIPE[i].reflectedPower->setText("0");
+		}
     }
 }
 

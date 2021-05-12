@@ -144,6 +144,7 @@ debug/qrc_sparky.cpp: ../Sparky/data/sparky.qrc \
 		../Sparky/data/save.png \
 		../Sparky/data/open.png \
 		../Sparky/data/play.png \
+		../Sparky/data/forward.png \
 		../Sparky/data/disconnect.png \
 		../Sparky/data/red.ico \
 		../Sparky/data/splash.png \

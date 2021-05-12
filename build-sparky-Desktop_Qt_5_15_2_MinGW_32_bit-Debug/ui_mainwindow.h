@@ -46,7 +46,7 @@ public:
     QAction *actionConnect;
     QAction *actionDisconnect;
     QAction *actionAbout_QModBus;
-    QAction *actionStop;
+    QAction *actionPause;
     QAction *actionSave;
     QAction *actionOpen;
     QAction *actionInjection_Pump_Rates;
@@ -128,6 +128,8 @@ public:
     QAction *actionFinal_Delta_Watercut;
     QAction *actionReadMasterPipe;
     QAction *actionStopInjection;
+    QAction *actionSkip;
+    QAction *actionStop;
     QWidget *centralWidget;
     QTabWidget *tabWidget_2;
     QWidget *tab_8;
@@ -183,6 +185,8 @@ public:
     QRadioButton *radioButton_8;
     QRadioButton *radioButton_9;
     QRadioButton *radioButton_10;
+    QLineEdit *runModeStatus;
+    QLabel *label_29;
     QGroupBox *groupBox_7;
     QLabel *label_98;
     QLabel *label_99;
@@ -419,11 +423,12 @@ public:
         actionDisconnect->setIcon(icon4);
         actionAbout_QModBus = new QAction(MainWindowClass);
         actionAbout_QModBus->setObjectName(QString::fromUtf8("actionAbout_QModBus"));
-        actionStop = new QAction(MainWindowClass);
-        actionStop->setObjectName(QString::fromUtf8("actionStop"));
+        actionPause = new QAction(MainWindowClass);
+        actionPause->setObjectName(QString::fromUtf8("actionPause"));
         QIcon icon5;
         icon5.addFile(QString::fromUtf8(":/pause.png"), QSize(), QIcon::Normal, QIcon::Off);
-        actionStop->setIcon(icon5);
+        icon5.addFile(QString::fromUtf8(":/stop.png"), QSize(), QIcon::Active, QIcon::On);
+        actionPause->setIcon(icon5);
         actionSave = new QAction(MainWindowClass);
         actionSave->setObjectName(QString::fromUtf8("actionSave"));
         QIcon icon6;
@@ -598,6 +603,16 @@ public:
         QIcon icon9;
         icon9.addFile(QString::fromUtf8(":/stopInjection.png"), QSize(), QIcon::Normal, QIcon::Off);
         actionStopInjection->setIcon(icon9);
+        actionSkip = new QAction(MainWindowClass);
+        actionSkip->setObjectName(QString::fromUtf8("actionSkip"));
+        QIcon icon10;
+        icon10.addFile(QString::fromUtf8(":/forward.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionSkip->setIcon(icon10);
+        actionStop = new QAction(MainWindowClass);
+        actionStop->setObjectName(QString::fromUtf8("actionStop"));
+        QIcon icon11;
+        icon11.addFile(QString::fromUtf8(":/stop.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionStop->setIcon(icon11);
         centralWidget = new QWidget(MainWindowClass);
         centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         tabWidget_2 = new QTabWidget(centralWidget);
@@ -718,7 +733,7 @@ public:
         comboBox_31->setFont(font1);
         groupBox_9 = new QGroupBox(groupBox_12);
         groupBox_9->setObjectName(QString::fromUtf8("groupBox_9"));
-        groupBox_9->setGeometry(QRect(10, 300, 141, 81));
+        groupBox_9->setGeometry(QRect(10, 290, 141, 81));
         label_4 = new QLabel(groupBox_9);
         label_4->setObjectName(QString::fromUtf8("label_4"));
         label_4->setGeometry(QRect(10, 20, 41, 21));
@@ -746,7 +761,7 @@ public:
         lineEdit->setClearButtonEnabled(true);
         groupBox_10 = new QGroupBox(groupBox_12);
         groupBox_10->setObjectName(QString::fromUtf8("groupBox_10"));
-        groupBox_10->setGeometry(QRect(160, 300, 141, 81));
+        groupBox_10->setGeometry(QRect(160, 290, 141, 81));
         label_10 = new QLabel(groupBox_10);
         label_10->setObjectName(QString::fromUtf8("label_10"));
         label_10->setGeometry(QRect(10, 20, 41, 21));
@@ -831,7 +846,7 @@ public:
         radioButton_12->setChecked(false);
         groupBox_125 = new QGroupBox(groupBox_12);
         groupBox_125->setObjectName(QString::fromUtf8("groupBox_125"));
-        groupBox_125->setGeometry(QRect(10, 390, 291, 51));
+        groupBox_125->setGeometry(QRect(10, 380, 291, 51));
         radioButton_7 = new QRadioButton(groupBox_125);
         radioButton_7->setObjectName(QString::fromUtf8("radioButton_7"));
         radioButton_7->setGeometry(QRect(10, 20, 31, 21));
@@ -845,6 +860,20 @@ public:
         radioButton_10 = new QRadioButton(groupBox_125);
         radioButton_10->setObjectName(QString::fromUtf8("radioButton_10"));
         radioButton_10->setGeometry(QRect(250, 20, 31, 21));
+        runModeStatus = new QLineEdit(groupBox_12);
+        runModeStatus->setObjectName(QString::fromUtf8("runModeStatus"));
+        runModeStatus->setGeometry(QRect(12, 455, 291, 44));
+        QFont font2;
+        font2.setPointSize(22);
+        font2.setBold(true);
+        font2.setWeight(75);
+        font2.setStrikeOut(false);
+        runModeStatus->setFont(font2);
+        runModeStatus->setAlignment(Qt::AlignCenter);
+        runModeStatus->setReadOnly(true);
+        label_29 = new QLabel(groupBox_12);
+        label_29->setObjectName(QString::fromUtf8("label_29"));
+        label_29->setGeometry(QRect(20, 429, 91, 31));
         groupBox_7 = new QGroupBox(tab_8);
         groupBox_7->setObjectName(QString::fromUtf8("groupBox_7"));
         groupBox_7->setGeometry(QRect(10, 530, 851, 171));
@@ -914,12 +943,12 @@ public:
         lineEdit_2 = new QLineEdit(groupBox_7);
         lineEdit_2->setObjectName(QString::fromUtf8("lineEdit_2"));
         lineEdit_2->setGeometry(QRect(80, 39, 81, 31));
-        QFont font2;
-        font2.setPointSize(14);
-        font2.setBold(false);
-        font2.setWeight(50);
-        font2.setStrikeOut(false);
-        lineEdit_2->setFont(font2);
+        QFont font3;
+        font3.setPointSize(14);
+        font3.setBold(false);
+        font3.setWeight(50);
+        font3.setStrikeOut(false);
+        lineEdit_2->setFont(font3);
         lineEdit_2->setMouseTracking(true);
         lineEdit_2->setAcceptDrops(true);
         lineEdit_2->setAlignment(Qt::AlignCenter);
@@ -927,7 +956,7 @@ public:
         lineEdit_7 = new QLineEdit(groupBox_7);
         lineEdit_7->setObjectName(QString::fromUtf8("lineEdit_7"));
         lineEdit_7->setGeometry(QRect(80, 80, 81, 31));
-        lineEdit_7->setFont(font2);
+        lineEdit_7->setFont(font3);
         lineEdit_7->setMouseTracking(true);
         lineEdit_7->setAcceptDrops(true);
         lineEdit_7->setAlignment(Qt::AlignCenter);
@@ -935,7 +964,7 @@ public:
         lineEdit_13 = new QLineEdit(groupBox_7);
         lineEdit_13->setObjectName(QString::fromUtf8("lineEdit_13"));
         lineEdit_13->setGeometry(QRect(80, 120, 81, 31));
-        lineEdit_13->setFont(font2);
+        lineEdit_13->setFont(font3);
         lineEdit_13->setMouseTracking(true);
         lineEdit_13->setAcceptDrops(true);
         lineEdit_13->setAlignment(Qt::AlignCenter);
@@ -943,24 +972,24 @@ public:
         label_104 = new QLabel(groupBox_7);
         label_104->setObjectName(QString::fromUtf8("label_104"));
         label_104->setGeometry(QRect(30, 36, 41, 31));
-        QFont font3;
-        font3.setPointSize(10);
-        font3.setBold(false);
-        font3.setWeight(50);
-        font3.setStrikeOut(false);
-        label_104->setFont(font3);
+        QFont font4;
+        font4.setPointSize(10);
+        font4.setBold(false);
+        font4.setWeight(50);
+        font4.setStrikeOut(false);
+        label_104->setFont(font4);
         label_107 = new QLabel(groupBox_7);
         label_107->setObjectName(QString::fromUtf8("label_107"));
         label_107->setGeometry(QRect(30, 79, 41, 31));
-        label_107->setFont(font3);
+        label_107->setFont(font4);
         label_108 = new QLabel(groupBox_7);
         label_108->setObjectName(QString::fromUtf8("label_108"));
         label_108->setGeometry(QRect(30, 118, 41, 31));
-        label_108->setFont(font3);
+        label_108->setFont(font4);
         lineEdit_3 = new QLineEdit(groupBox_7);
         lineEdit_3->setObjectName(QString::fromUtf8("lineEdit_3"));
         lineEdit_3->setGeometry(QRect(180, 39, 81, 31));
-        lineEdit_3->setFont(font2);
+        lineEdit_3->setFont(font3);
         lineEdit_3->setMouseTracking(true);
         lineEdit_3->setAcceptDrops(true);
         lineEdit_3->setAlignment(Qt::AlignCenter);
@@ -969,7 +998,7 @@ public:
         lineEdit_14 = new QLineEdit(groupBox_7);
         lineEdit_14->setObjectName(QString::fromUtf8("lineEdit_14"));
         lineEdit_14->setGeometry(QRect(180, 120, 81, 31));
-        lineEdit_14->setFont(font2);
+        lineEdit_14->setFont(font3);
         lineEdit_14->setMouseTracking(true);
         lineEdit_14->setAcceptDrops(true);
         lineEdit_14->setAlignment(Qt::AlignCenter);
@@ -978,7 +1007,7 @@ public:
         lineEdit_8 = new QLineEdit(groupBox_7);
         lineEdit_8->setObjectName(QString::fromUtf8("lineEdit_8"));
         lineEdit_8->setGeometry(QRect(180, 80, 81, 31));
-        lineEdit_8->setFont(font2);
+        lineEdit_8->setFont(font3);
         lineEdit_8->setMouseTracking(true);
         lineEdit_8->setAcceptDrops(true);
         lineEdit_8->setAlignment(Qt::AlignCenter);
@@ -987,7 +1016,7 @@ public:
         lineEdit_4 = new QLineEdit(groupBox_7);
         lineEdit_4->setObjectName(QString::fromUtf8("lineEdit_4"));
         lineEdit_4->setGeometry(QRect(280, 39, 81, 31));
-        lineEdit_4->setFont(font2);
+        lineEdit_4->setFont(font3);
         lineEdit_4->setMouseTracking(true);
         lineEdit_4->setAcceptDrops(true);
         lineEdit_4->setAlignment(Qt::AlignCenter);
@@ -996,7 +1025,7 @@ public:
         lineEdit_15 = new QLineEdit(groupBox_7);
         lineEdit_15->setObjectName(QString::fromUtf8("lineEdit_15"));
         lineEdit_15->setGeometry(QRect(280, 120, 81, 31));
-        lineEdit_15->setFont(font2);
+        lineEdit_15->setFont(font3);
         lineEdit_15->setMouseTracking(true);
         lineEdit_15->setAcceptDrops(true);
         lineEdit_15->setAlignment(Qt::AlignCenter);
@@ -1005,7 +1034,7 @@ public:
         lineEdit_9 = new QLineEdit(groupBox_7);
         lineEdit_9->setObjectName(QString::fromUtf8("lineEdit_9"));
         lineEdit_9->setGeometry(QRect(280, 80, 81, 31));
-        lineEdit_9->setFont(font2);
+        lineEdit_9->setFont(font3);
         lineEdit_9->setMouseTracking(true);
         lineEdit_9->setAcceptDrops(true);
         lineEdit_9->setAlignment(Qt::AlignCenter);
@@ -1014,7 +1043,7 @@ public:
         lineEdit_5 = new QLineEdit(groupBox_7);
         lineEdit_5->setObjectName(QString::fromUtf8("lineEdit_5"));
         lineEdit_5->setGeometry(QRect(380, 39, 81, 31));
-        lineEdit_5->setFont(font2);
+        lineEdit_5->setFont(font3);
         lineEdit_5->setMouseTracking(true);
         lineEdit_5->setAcceptDrops(true);
         lineEdit_5->setAlignment(Qt::AlignCenter);
@@ -1023,7 +1052,7 @@ public:
         lineEdit_16 = new QLineEdit(groupBox_7);
         lineEdit_16->setObjectName(QString::fromUtf8("lineEdit_16"));
         lineEdit_16->setGeometry(QRect(380, 120, 81, 31));
-        lineEdit_16->setFont(font2);
+        lineEdit_16->setFont(font3);
         lineEdit_16->setMouseTracking(true);
         lineEdit_16->setAcceptDrops(true);
         lineEdit_16->setAlignment(Qt::AlignCenter);
@@ -1032,7 +1061,7 @@ public:
         lineEdit_10 = new QLineEdit(groupBox_7);
         lineEdit_10->setObjectName(QString::fromUtf8("lineEdit_10"));
         lineEdit_10->setGeometry(QRect(380, 80, 81, 31));
-        lineEdit_10->setFont(font2);
+        lineEdit_10->setFont(font3);
         lineEdit_10->setMouseTracking(true);
         lineEdit_10->setAcceptDrops(true);
         lineEdit_10->setAlignment(Qt::AlignCenter);
@@ -1041,7 +1070,7 @@ public:
         lineEdit_6 = new QLineEdit(groupBox_7);
         lineEdit_6->setObjectName(QString::fromUtf8("lineEdit_6"));
         lineEdit_6->setGeometry(QRect(480, 39, 81, 31));
-        lineEdit_6->setFont(font2);
+        lineEdit_6->setFont(font3);
         lineEdit_6->setMouseTracking(true);
         lineEdit_6->setAcceptDrops(true);
         lineEdit_6->setAlignment(Qt::AlignCenter);
@@ -1050,7 +1079,7 @@ public:
         lineEdit_17 = new QLineEdit(groupBox_7);
         lineEdit_17->setObjectName(QString::fromUtf8("lineEdit_17"));
         lineEdit_17->setGeometry(QRect(480, 120, 81, 31));
-        lineEdit_17->setFont(font2);
+        lineEdit_17->setFont(font3);
         lineEdit_17->setMouseTracking(true);
         lineEdit_17->setAcceptDrops(true);
         lineEdit_17->setAlignment(Qt::AlignCenter);
@@ -1059,7 +1088,7 @@ public:
         lineEdit_11 = new QLineEdit(groupBox_7);
         lineEdit_11->setObjectName(QString::fromUtf8("lineEdit_11"));
         lineEdit_11->setGeometry(QRect(480, 80, 81, 31));
-        lineEdit_11->setFont(font2);
+        lineEdit_11->setFont(font3);
         lineEdit_11->setMouseTracking(true);
         lineEdit_11->setAcceptDrops(true);
         lineEdit_11->setAlignment(Qt::AlignCenter);
@@ -1068,7 +1097,7 @@ public:
         lineEdit_12 = new QLineEdit(groupBox_7);
         lineEdit_12->setObjectName(QString::fromUtf8("lineEdit_12"));
         lineEdit_12->setGeometry(QRect(570, 39, 81, 31));
-        lineEdit_12->setFont(font2);
+        lineEdit_12->setFont(font3);
         lineEdit_12->setMouseTracking(true);
         lineEdit_12->setAcceptDrops(true);
         lineEdit_12->setAlignment(Qt::AlignCenter);
@@ -1077,7 +1106,7 @@ public:
         lineEdit_18 = new QLineEdit(groupBox_7);
         lineEdit_18->setObjectName(QString::fromUtf8("lineEdit_18"));
         lineEdit_18->setGeometry(QRect(570, 120, 81, 31));
-        lineEdit_18->setFont(font2);
+        lineEdit_18->setFont(font3);
         lineEdit_18->setMouseTracking(true);
         lineEdit_18->setAcceptDrops(true);
         lineEdit_18->setAlignment(Qt::AlignCenter);
@@ -1086,7 +1115,7 @@ public:
         lineEdit_19 = new QLineEdit(groupBox_7);
         lineEdit_19->setObjectName(QString::fromUtf8("lineEdit_19"));
         lineEdit_19->setGeometry(QRect(570, 80, 81, 31));
-        lineEdit_19->setFont(font2);
+        lineEdit_19->setFont(font3);
         lineEdit_19->setMouseTracking(true);
         lineEdit_19->setAcceptDrops(true);
         lineEdit_19->setAlignment(Qt::AlignCenter);
@@ -1159,12 +1188,12 @@ public:
         sizePolicy1.setHeightForWidth(requestPreview->sizePolicy().hasHeightForWidth());
         requestPreview->setSizePolicy(sizePolicy1);
         requestPreview->setMaximumSize(QSize(500, 25));
-        QFont font4;
-        font4.setFamily(QString::fromUtf8("Courier"));
-        font4.setBold(false);
-        font4.setWeight(50);
-        font4.setStrikeOut(false);
-        requestPreview->setFont(font4);
+        QFont font5;
+        font5.setFamily(QString::fromUtf8("Courier"));
+        font5.setBold(false);
+        font5.setWeight(50);
+        font5.setStrikeOut(false);
+        requestPreview->setFont(font5);
         requestPreview->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         requestPreview->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         requestPreview->setUndoRedoEnabled(false);
@@ -1233,13 +1262,13 @@ public:
         gridLayout_4->setObjectName(QString::fromUtf8("gridLayout_4"));
         rawData = new QPlainTextEdit(groupBox);
         rawData->setObjectName(QString::fromUtf8("rawData"));
-        QFont font5;
-        font5.setFamily(QString::fromUtf8("Fixedsys"));
-        font5.setPointSize(10);
-        font5.setBold(false);
-        font5.setWeight(50);
-        font5.setStrikeOut(false);
-        rawData->setFont(font5);
+        QFont font6;
+        font6.setFamily(QString::fromUtf8("Fixedsys"));
+        font6.setPointSize(10);
+        font6.setBold(false);
+        font6.setWeight(50);
+        font6.setStrikeOut(false);
+        rawData->setFont(font6);
         rawData->setUndoRedoEnabled(false);
         rawData->setReadOnly(true);
 
@@ -1438,12 +1467,12 @@ public:
         lineEdit_21 = new QLineEdit(groupBox_20);
         lineEdit_21->setObjectName(QString::fromUtf8("lineEdit_21"));
         lineEdit_21->setGeometry(QRect(10, 140, 81, 21));
-        QFont font6;
-        font6.setPointSize(12);
-        font6.setBold(false);
-        font6.setWeight(50);
-        font6.setStrikeOut(false);
-        lineEdit_21->setFont(font6);
+        QFont font7;
+        font7.setPointSize(12);
+        font7.setBold(false);
+        font7.setWeight(50);
+        font7.setStrikeOut(false);
+        lineEdit_21->setFont(font7);
         lineEdit_21->setMouseTracking(true);
         lineEdit_21->setAcceptDrops(true);
         lineEdit_21->setAlignment(Qt::AlignCenter);
@@ -1452,7 +1481,7 @@ public:
         lineEdit_22 = new QLineEdit(groupBox_20);
         lineEdit_22->setObjectName(QString::fromUtf8("lineEdit_22"));
         lineEdit_22->setGeometry(QRect(110, 140, 81, 21));
-        lineEdit_22->setFont(font6);
+        lineEdit_22->setFont(font7);
         lineEdit_22->setMouseTracking(true);
         lineEdit_22->setAcceptDrops(true);
         lineEdit_22->setAlignment(Qt::AlignCenter);
@@ -1467,7 +1496,7 @@ public:
         lineEdit_29 = new QLineEdit(groupBox_20);
         lineEdit_29->setObjectName(QString::fromUtf8("lineEdit_29"));
         lineEdit_29->setGeometry(QRect(10, 90, 81, 21));
-        lineEdit_29->setFont(font6);
+        lineEdit_29->setFont(font7);
         lineEdit_29->setMouseTracking(true);
         lineEdit_29->setAcceptDrops(true);
         lineEdit_29->setAlignment(Qt::AlignCenter);
@@ -1476,7 +1505,7 @@ public:
         lineEdit_30 = new QLineEdit(groupBox_20);
         lineEdit_30->setObjectName(QString::fromUtf8("lineEdit_30"));
         lineEdit_30->setGeometry(QRect(110, 40, 81, 21));
-        lineEdit_30->setFont(font6);
+        lineEdit_30->setFont(font7);
         lineEdit_30->setMouseTracking(true);
         lineEdit_30->setAcceptDrops(true);
         lineEdit_30->setAlignment(Qt::AlignCenter);
@@ -1485,7 +1514,7 @@ public:
         lineEdit_31 = new QLineEdit(groupBox_20);
         lineEdit_31->setObjectName(QString::fromUtf8("lineEdit_31"));
         lineEdit_31->setGeometry(QRect(110, 90, 81, 21));
-        lineEdit_31->setFont(font6);
+        lineEdit_31->setFont(font7);
         lineEdit_31->setMouseTracking(true);
         lineEdit_31->setAcceptDrops(true);
         lineEdit_31->setAlignment(Qt::AlignCenter);
@@ -1497,7 +1526,7 @@ public:
         lineEdit_20 = new QLineEdit(groupBox_20);
         lineEdit_20->setObjectName(QString::fromUtf8("lineEdit_20"));
         lineEdit_20->setGeometry(QRect(10, 40, 81, 21));
-        lineEdit_20->setFont(font6);
+        lineEdit_20->setFont(font7);
         lineEdit_20->setMouseTracking(true);
         lineEdit_20->setAcceptDrops(true);
         lineEdit_20->setAlignment(Qt::AlignCenter);
@@ -1509,7 +1538,7 @@ public:
         lineEdit_23 = new QLineEdit(tab_8);
         lineEdit_23->setObjectName(QString::fromUtf8("lineEdit_23"));
         lineEdit_23->setGeometry(QRect(640, 490, 91, 31));
-        lineEdit_23->setFont(font2);
+        lineEdit_23->setFont(font3);
         lineEdit_23->setMouseTracking(true);
         lineEdit_23->setAcceptDrops(true);
         lineEdit_23->setAlignment(Qt::AlignCenter);
@@ -1518,7 +1547,7 @@ public:
         lineEdit_24 = new QLineEdit(tab_8);
         lineEdit_24->setObjectName(QString::fromUtf8("lineEdit_24"));
         lineEdit_24->setGeometry(QRect(540, 490, 91, 31));
-        lineEdit_24->setFont(font2);
+        lineEdit_24->setFont(font3);
         lineEdit_24->setMouseTracking(true);
         lineEdit_24->setAcceptDrops(true);
         lineEdit_24->setAlignment(Qt::AlignCenter);
@@ -1527,7 +1556,7 @@ public:
         lineEdit_25 = new QLineEdit(tab_8);
         lineEdit_25->setObjectName(QString::fromUtf8("lineEdit_25"));
         lineEdit_25->setGeometry(QRect(440, 490, 91, 31));
-        lineEdit_25->setFont(font2);
+        lineEdit_25->setFont(font3);
         lineEdit_25->setMouseTracking(true);
         lineEdit_25->setAcceptDrops(true);
         lineEdit_25->setAlignment(Qt::AlignCenter);
@@ -1536,7 +1565,7 @@ public:
         lineEdit_26 = new QLineEdit(tab_8);
         lineEdit_26->setObjectName(QString::fromUtf8("lineEdit_26"));
         lineEdit_26->setGeometry(QRect(340, 490, 91, 31));
-        lineEdit_26->setFont(font2);
+        lineEdit_26->setFont(font3);
         lineEdit_26->setMouseTracking(true);
         lineEdit_26->setAcceptDrops(true);
         lineEdit_26->setAlignment(Qt::AlignCenter);
@@ -1829,11 +1858,11 @@ public:
         actionQuit->setText(QCoreApplication::translate("MainWindowClass", "Quit", nullptr));
         actionSettings->setText(QCoreApplication::translate("MainWindowClass", "Settings", nullptr));
 #if QT_CONFIG(tooltip)
-        actionSettings->setToolTip(QCoreApplication::translate("MainWindowClass", "Change Configuration", nullptr));
+        actionSettings->setToolTip(QCoreApplication::translate("MainWindowClass", "Loop Configuration", nullptr));
 #endif // QT_CONFIG(tooltip)
         actionStart->setText(QCoreApplication::translate("MainWindowClass", "Start", nullptr));
 #if QT_CONFIG(tooltip)
-        actionStart->setToolTip(QCoreApplication::translate("MainWindowClass", "Calibration Start", nullptr));
+        actionStart->setToolTip(QCoreApplication::translate("MainWindowClass", "Start Calibration", nullptr));
 #endif // QT_CONFIG(tooltip)
         actionConnect->setText(QCoreApplication::translate("MainWindowClass", "connect", nullptr));
 #if QT_CONFIG(tooltip)
@@ -1844,12 +1873,12 @@ public:
         actionDisconnect->setToolTip(QCoreApplication::translate("MainWindowClass", "Disconnect serial port", nullptr));
 #endif // QT_CONFIG(tooltip)
         actionAbout_QModBus->setText(QCoreApplication::translate("MainWindowClass", "About QModBus", nullptr));
-        actionStop->setText(QCoreApplication::translate("MainWindowClass", "Stop", nullptr));
+        actionPause->setText(QCoreApplication::translate("MainWindowClass", "Stop", nullptr));
 #if QT_CONFIG(tooltip)
-        actionStop->setToolTip(QCoreApplication::translate("MainWindowClass", "Calibration Stop", nullptr));
+        actionPause->setToolTip(QCoreApplication::translate("MainWindowClass", "Pause Calibration", nullptr));
 #endif // QT_CONFIG(tooltip)
 #if QT_CONFIG(shortcut)
-        actionStop->setShortcut(QCoreApplication::translate("MainWindowClass", "Ctrl+C", nullptr));
+        actionPause->setShortcut(QCoreApplication::translate("MainWindowClass", "Ctrl+C", nullptr));
 #endif // QT_CONFIG(shortcut)
         actionSave->setText(QCoreApplication::translate("MainWindowClass", "Save", nullptr));
 #if QT_CONFIG(tooltip)
@@ -1953,6 +1982,14 @@ public:
 #if QT_CONFIG(tooltip)
         actionStopInjection->setToolTip(QCoreApplication::translate("MainWindowClass", "Stop Injection", nullptr));
 #endif // QT_CONFIG(tooltip)
+        actionSkip->setText(QCoreApplication::translate("MainWindowClass", "Skip", nullptr));
+#if QT_CONFIG(tooltip)
+        actionSkip->setToolTip(QCoreApplication::translate("MainWindowClass", "Skip Current and Move To The  Next Stage", nullptr));
+#endif // QT_CONFIG(tooltip)
+        actionStop->setText(QCoreApplication::translate("MainWindowClass", "Stop", nullptr));
+#if QT_CONFIG(tooltip)
+        actionStop->setToolTip(QCoreApplication::translate("MainWindowClass", "Cancel Calibration", nullptr));
+#endif // QT_CONFIG(tooltip)
         groupBox_18->setTitle(QCoreApplication::translate("MainWindowClass", "SERIAL CONNECTION", nullptr));
         label_14->setText(QCoreApplication::translate("MainWindowClass", "SERIAL PORT", nullptr));
         label_15->setText(QCoreApplication::translate("MainWindowClass", "BAUD RATE", nullptr));
@@ -2054,6 +2091,7 @@ public:
         radioButton_8->setText(QCoreApplication::translate("MainWindowClass", "2", nullptr));
         radioButton_9->setText(QCoreApplication::translate("MainWindowClass", "3", nullptr));
         radioButton_10->setText(QCoreApplication::translate("MainWindowClass", "4", nullptr));
+        label_29->setText(QCoreApplication::translate("MainWindowClass", "CURRENT STAGE", nullptr));
         groupBox_7->setTitle(QCoreApplication::translate("MainWindowClass", "PIPES UNDER CALIBRATION", nullptr));
         label_98->setText(QCoreApplication::translate("MainWindowClass", "SERIAL NUMBER", nullptr));
         label_99->setText(QCoreApplication::translate("MainWindowClass", "WATERCUT [ % ]", nullptr));
