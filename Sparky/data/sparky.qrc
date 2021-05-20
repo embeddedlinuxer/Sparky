@@ -17,5 +17,6 @@
         <file>stopInjection.png</file>
         <file>splash_2.png</file>
         <file>forward.png</file>
+        <file>sync.png</file>
     </qresource>
 </RCC>

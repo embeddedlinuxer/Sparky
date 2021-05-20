@@ -189,7 +189,8 @@ static int send_msg(modbus_t *ctx, uint8_t *msg, int msg_length)
 
     msg_length = ctx->backend->send_msg_pre(msg, msg_length);
 
-    if (ctx->debug) {
+    if (ctx->debug) 
+	{
         for (i = 0; i < msg_length; i++)
             printf("[%.2X]", msg[i]);
         printf("\n");
@@ -266,8 +267,7 @@ int modbus_send_raw_request(modbus_t *ctx, uint8_t *raw_req, int raw_req_length)
  */
 
 /* Computes the length to read after the function received */
-static uint8_t compute_meta_length_after_function(int function,
-                                                  msg_type_t msg_type)
+static uint8_t compute_meta_length_after_function(int function,msg_type_t msg_type)
 {
     int length;
 
@@ -308,10 +308,11 @@ static uint8_t compute_meta_length_after_function(int function,
 /* Computes the length to read after the meta information (address, count, etc) */
 static int compute_data_length_after_meta(modbus_t *ctx, uint8_t *msg,msg_type_t msg_type)
 {
-    int function = msg[ctx->backend->header_length];
+    int length, function;
+
     //if (ctx->slave > 99) function = msg[ctx->backend->header_length + 4]; // DKOH
     if (ctx->slave > MAX_MODBUS_ID) function = msg[ctx->backend->header_length + 4]; // DKOH
-    int length;
+	else function = msg[ctx->backend->header_length]; 
 
     if (msg_type == MSG_INDICATION) {
         switch (function) {
@@ -330,8 +331,14 @@ static int compute_data_length_after_meta(modbus_t *ctx, uint8_t *msg,msg_type_t
         if (function <= MODBUS_FC_READ_INPUT_REGISTERS ||
             function == MODBUS_FC_REPORT_SLAVE_ID ||
             function == MODBUS_FC_WRITE_AND_READ_REGISTERS) {
-            length = msg[ctx->backend->header_length + 1];
-            if (ctx->slave > MAX_MODBUS_ID) length = msg[ctx->backend->header_length + 1 + 4]; // DKOH
+            if (ctx->slave > MAX_MODBUS_ID) 
+			{
+				length = msg[ctx->backend->header_length + 1 + 4]; // DKOH
+			}
+			else
+			{
+            	length = msg[ctx->backend->header_length + 1];
+			}
         } else {
             length = 0;
         }
@@ -1385,6 +1392,7 @@ static int write_single(modbus_t *ctx, int function, int addr, int value)
     req_length = ctx->backend->build_request_basis(ctx, function, addr, value, req);
 
     rc = send_msg(ctx, req, req_length);
+
     if (rc > 0) {
         /* Used by write_bit and write_register */
         uint8_t rsp[MAX_MESSAGE_LENGTH];

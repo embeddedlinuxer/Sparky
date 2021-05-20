@@ -41,7 +41,8 @@ MODBUS_BEGIN_DECLS
  * - HEADER_LENGTH_TCP (7) + function (1) + address (2) + number (2)
  * - HEADER_LENGTH_RTU (1) + function (1) + address (2) + number (2) + CRC (2)
  */
-#define _MIN_REQ_LENGTH 12
+//#define _MIN_REQ_LENGTH 12
+#define _MIN_REQ_LENGTH 16 // DKOH
 
 #define _REPORT_SLAVE_ID 180
 

@@ -1,3 +1,4 @@
+#include <QRegExp>
 #include <QtConcurrent>
 #include <QSettings>
 #include <QDebug>
@@ -145,6 +146,8 @@ setValidators()
     ui->lineEdit_2->setValidator( new QDoubleValidator(0, 1000000, 2, this) ); // oilRunStart
     ui->lineEdit_7->setValidator( new QDoubleValidator(0, 1000000, 2, this) ); // oilRunStart
     ui->lineEdit_13->setValidator( new QDoubleValidator(0, 1000000, 2, this) ); // oilRunStart
+    ui->lineEdit_109->setValidator( new QDoubleValidator(-100000, 1000000, 5, this) ); // float modbus monitor
+    ui->lineEdit_111->setValidator( new QDoubleValidator(-100000, 1000000, 5, this) ); // integer modbus monitor
 }
 
 
@@ -183,13 +186,12 @@ initializeToolbarIcons() {
 	ui->actionPause->setVisible(false);
     ui->toolBar->addAction(ui->actionSkip);
     ui->toolBar->addAction(ui->actionStop);
-
     ui->toolBar->addSeparator();
     ui->toolBar->addAction(ui->actionReadMasterPipe);
-
     ui->toolBar->addSeparator();
+    ui->toolBar->addAction(ui->actionSync);
+	ui->toolBar->addSeparator();
     ui->toolBar->addAction(ui->actionStopInjection);
-
 	ui->toolBar->addSeparator();
     ui->toolBar->addAction(ui->actionSettings);
 }
@@ -255,7 +257,7 @@ void MainWindow::busMonitorAddItem( bool isRequest,
     QTableWidgetItem * slaveItem = new QTableWidgetItem( QString::number( slave ) );
     QTableWidgetItem * funcItem = new QTableWidgetItem( QString::number( func ) );
     QTableWidgetItem * addrItem = new QTableWidgetItem( QString::number( addr ) );
-    (ui->radioButton_181->isChecked()) ?numItem  = new QTableWidgetItem( QString::number( 2 ) ) : numItem = new QTableWidgetItem( QString::number( 1 ) );
+    (ui->radioButton_181->isChecked()) ? numItem  = new QTableWidgetItem( QString::number( 2 ) ) : numItem = new QTableWidgetItem( QString::number( 1 ) );
     QTableWidgetItem * crcItem = new QTableWidgetItem;
 
     if( func > 127 )
@@ -448,7 +450,7 @@ void MainWindow::enableHexView( void )
 void MainWindow::sendModbusRequest( void )
 {
     // UPDATE m_modbus_snipping WITH THE CURRENT
-    if (ui->tabWidget_2->currentIndex() == 0) m_modbus_snipping = LOOP.modbus;
+    m_modbus_snipping = LOOP.modbus;
 
     if( m_modbus_snipping == NULL )
     {
@@ -619,7 +621,6 @@ void MainWindow::sendModbusRequest( void )
         isModbusTransmissionFailed = true;
     }
 }
-
 
 void MainWindow::resetStatus( void )
 {
@@ -848,8 +849,12 @@ void
 MainWindow::
 connectRadioButtons()
 {
-    connect(ui->radioButton_187, SIGNAL(toggled(bool)), this, SLOT(onReadButtonPressed(bool)));
-    connect(ui->radioButton_186, SIGNAL(toggled(bool)), this, SLOT(onWriteButtonPressed(bool)));
+    connect(ui->radioButton_187, SIGNAL(pressed()), this, SLOT(onReadButtonPressed()));
+    connect(ui->radioButton_186, SIGNAL(pressed()), this, SLOT(onWriteButtonPressed()));
+	
+    connect(ui->radioButton_181, SIGNAL(pressed()), this, SLOT(onDataTypeChanged()));
+    connect(ui->radioButton_182, SIGNAL(pressed()), this, SLOT(onDataTypeChanged()));
+    connect(ui->radioButton_183, SIGNAL(pressed()), this, SLOT(onDataTypeChanged()));
 }
 
 
@@ -894,10 +899,11 @@ connectToolbar()
     connect(ui->actionSave, SIGNAL(triggered()),this,SLOT(saveCsvFile()));
     connect(ui->actionOpen, SIGNAL(triggered()),this,SLOT(loadCsvFile()));
     connect(ui->actionSettings, SIGNAL(triggered()),this,SLOT(onActionSettings()));
+    connect(ui->actionSync, SIGNAL(triggered()),this,SLOT(onActionSync()));
     connect(ui->actionStart, SIGNAL(triggered()),this,SLOT(onActionStart()));
     connect(ui->actionStop, SIGNAL(triggered()),this,SLOT(onActionStopPressed()));
     connect(ui->actionPause, SIGNAL(triggered()),this,SLOT(onActionPause()));
-    connect(ui->actionReadMasterPipe, SIGNAL(triggered()),this,SLOT(readMasterPipe()));
+    connect(ui->actionReadMasterPipe, SIGNAL(triggered()),this,SLOT(onActionReadMasterPipe()));
     connect(ui->actionStopInjection, SIGNAL(triggered()),this,SLOT(onActionStopInjection()));
     connect(ui->actionSkip, SIGNAL(triggered()),this,SLOT(onActionSkip()));
 
@@ -1461,7 +1467,7 @@ onEquationTableChecked(bool isTable)
 
 double
 MainWindow::
-sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int address, int num, int ret, uint8_t * dest, uint16_t * dest16, bool is16Bit, bool writeAccess, QString funcType)
+sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int address, int num, int ret, uint8_t * dest, uint16_t * dest16, bool is16Bit, bool writeAccess, QString funcType, QString w_value = "0")
 {
     //////// address offset /////////
     int addr = address - ADDR_OFFSET;
@@ -1483,12 +1489,12 @@ sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int addr
             is16Bit = true;
             break;
         case MODBUS_FC_WRITE_SINGLE_COIL:
-            ret = modbus_write_bit( serialModbus, addr,ui->radioButton_184->isChecked() ? 1 : 0 );
+            ret = modbus_write_bit( serialModbus, addr, (w_value == "1") ? 1 : 0);
             writeAccess = true;
             num = 1;
             break;
         case MODBUS_FC_WRITE_SINGLE_REGISTER:
-            ret = modbus_write_register( serialModbus, addr,ui->lineEdit_111->text().toInt(0, 0) );
+            ret = modbus_write_register( serialModbus, addr, w_value.toInt() );
             writeAccess = true;
             num = 1;
             break;
@@ -1504,7 +1510,7 @@ sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int addr
         case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
         {
             float value;
-            QString qvalue = ui->lineEdit_109->text();
+            QString qvalue = w_value;
             QTextStream floatTextStream(&qvalue);
             floatTextStream >> value;
             quint16 (*reg)[2] = reinterpret_cast<quint16(*)[2]>(&value);
@@ -1535,7 +1541,6 @@ sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int addr
             QString qs_output = "0x";
             bool ok = false;
 
-            ui->regTable->setRowCount( num );
             for( int i = 0; i < num; ++i )
             {
                 int data = is16Bit ? dest16[i] : dest[i];
@@ -1547,12 +1552,10 @@ sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int addr
 
                 if (dataType == INT_R)  // INT_READ
                 {
-                    ui->lineEdit_111->setText(QString::number(data));
                     return data;
                 }
                 else if (dataType == COIL_R)  // COIL_READ
                 {
-                    (data) ? ui->radioButton_184->setChecked(true) : ui->radioButton_185->setChecked(true);
                     return (data) ? 1 : 0;
                 }
             }
@@ -1562,7 +1565,6 @@ sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int addr
             {
                 QByteArray array = QByteArray::fromHex(qs_output.toLatin1());
                 d = toFloat(array);
-                ui->lineEdit_109->setText(QString::number(d,'f',3)) ;
                 return d;
             }
         }
@@ -1610,6 +1612,7 @@ void
 MainWindow::
 onActionStartInjection()
 {
+	updateCurrentStage(ORANGE,"INJECT");
 	LOOP.isInjectionOn = true;
 	LOOP.isTempRunSkip = false;
     inject(COIL_WATER_PUMP,LOOP.isInjectionOn);
@@ -1619,6 +1622,7 @@ void
 MainWindow::
 onActionStopInjection()
 {
+	if (LOOP.isInjectionOn) updateCurrentStage(BLACK,"INJECT-STANDBY");
 	LOOP.isInjectionOn = false;
     inject(COIL_WATER_PUMP,LOOP.isInjectionOn);
 	LOOP.isTempRunSkip = false;
@@ -1744,6 +1748,103 @@ onActionStop()
 
 void
 MainWindow::
+onActionReadMasterPipe()
+{
+	if (!LOOP.isCal) readMasterPipe();
+	else if (LOOP.isPause) readMasterPipe();
+	else informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),"UNABLE TO READ MASTER PIPE MANUALLY   " ,"Unable To Read Master Pipe Manually During Calibration!");
+
+}
+
+void
+MainWindow::
+onActionSync()
+{
+	if (LOOP.isCal) 
+	{
+		informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),"UNABLE TO SYNCHRONIZE   " ,"Unable To Synchronize During Calibration!");
+		return;
+	}
+
+    if (PIPE[0].slave->text().isEmpty() && PIPE[1].slave->text().isEmpty() && PIPE[2].slave->text().isEmpty()) 
+	{
+		informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"No Valid Serial Number Found!");
+		return;
+	}
+
+	if (ui->lineEdit_29->text().isEmpty())
+	{
+		informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"Read Master Pipe And Get Valid Temperature First!");
+		return;
+	}
+
+	for (int pipe=0; pipe<3; pipe++)
+    {
+        if (!PIPE[pipe].slave->text().isEmpty())
+		{
+            uint8_t dest[1024];
+            uint16_t * dest16 = (uint16_t *) dest;
+            int ret = -1;
+            bool is16Bit = false;
+            bool writeAccess = false;
+            const QString funcType = descriptiveDataTypeName( FUNC_READ_INT );
+
+            /// set slave
+            memset( dest, 0, 1024 );
+            modbus_set_slave( LOOP.serialModbus, PIPE[pipe].slave->text().toInt());
+
+            /// read pipe serial number
+            sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_INT, RAZ_ID_SN_PIPE, BYTE_READ_INT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+
+            /// verify if serial number matches with pipe
+            if (*dest16 != PIPE[pipe].slave->text().toInt())
+            {
+        		informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"Invalid Seial Number!");
+
+                /// sn is valid but serial port invalid then it's an error
+				onActionStop();
+                return;
+            }
+
+			double temp, fctAdjTemp, tempDiff;
+   			temp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, RAZ_ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+   			while (temp != temp) temp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, RAZ_ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+			delay(SLEEP_TIME);
+			
+			fctAdjTemp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, FCT_RAZ_TEMP_ADJ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+			while (fctAdjTemp != fctAdjTemp) fctAdjTemp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, FCT_RAZ_TEMP_ADJ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+			delay(SLEEP_TIME);
+
+		    if ((temp != temp) || (fctAdjTemp != fctAdjTemp))
+//		      || (fctAdjTemp != fctAdjTemp) || (fctAdjTemp > std::numeric_limits<qreal>::max()) || (fctAdjTemp < -std::numeric_limits<qreal>::max()))
+			{
+				informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"Failed to Read. Try Again!");
+        		return;
+    		}
+
+			double masterTemp = ui->lineEdit_29->text().toDouble();
+			tempDiff = masterTemp - temp;
+
+			qDebug() << PIPE[pipe].slave->text();	
+			qDebug() << "TARGET TEMP: " << temp;	
+			qDebug() << "NEW PDI_TEMP_ADJ: "<< fctAdjTemp + tempDiff;	
+
+			lockFCT(pipe, UNLOCK);
+			delay(SLEEP_TIME);
+
+			/// reset PDI_TEMP_ADJ
+   			sendCalibrationRequest(FLOAT_W, LOOP.serialModbus, FUNC_WRITE_FLOAT, FCT_RAZ_TEMP_ADJ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType, QString::number(fctAdjTemp + tempDiff));
+			delay(SLEEP_TIME);
+
+			lockFCT(pipe, LOCK);
+			delay(SLEEP_TIME);
+		}
+	}
+}
+
+
+void
+MainWindow::
 onActionSettings()
 {
     static bool on = true;
@@ -1786,90 +1887,12 @@ onActionSettings()
     on = !on;
 }
 
-
 void
 MainWindow::
-loadCsvTemplate()
+loadFile(QString fileName)
 {
-    int line = 0;
-    QFile file;
-    QString razorTemplatePath = QCoreApplication::applicationDirPath()+"/razor.csv";
-    QString eeaTemplatePath = QCoreApplication::applicationDirPath()+"/eea.csv";
-
-    if (ui->radioButton_190->isChecked()) // eea
-        file.setFileName(eeaTemplatePath);
-    else
-        file.setFileName(razorTemplatePath);
-
-    if (!file.open(QIODevice::ReadOnly)) return;
-
-    QTextStream str(&file);
-
-    ui->tableWidget->clearContents();
-    ui->tableWidget->setRowCount(0);
-
-    while (!str.atEnd()) {
-
-        QString s = str.readLine();
-        if (s.size() == 0)
-        {
-            file.close();
-            break;
-        }
-        else {
-            line++;
-        }
-
-        // split data
-        QStringList valueList = s.split(',');
-
-        if (!valueList[0].contains("*"))
-        {
-            // insert a new row
-            ui->tableWidget->insertRow( ui->tableWidget->rowCount() );
-
-            // insert columns
-            while (ui->tableWidget->columnCount() < valueList[6].toInt()+7)
-            {
-                ui->tableWidget->insertColumn(ui->tableWidget->columnCount());
-            }
-
-            // fill the data in the talbe cell
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 0, new QTableWidgetItem(valueList[0])); // Name
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 1, new QTableWidgetItem(valueList[1])); // Slave
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 2, new QTableWidgetItem(valueList[2])); // Address
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 3, new QTableWidgetItem(valueList[3])); // Type
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 4, new QTableWidgetItem(valueList[4])); // Scale
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 5, new QTableWidgetItem(valueList[5])); // RW
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 6, new QTableWidgetItem(valueList[6])); // Qty
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 7, new QTableWidgetItem(valueList[7])); // Value
-
-            // enable uploadEquationButton
-            ui->startEquationBtn->setEnabled(1);
-        }
-    }
-
-    // set column width
-    ui->tableWidget->setColumnWidth(0,120); // Name
-    ui->tableWidget->setColumnWidth(1,30);  // Slave
-    ui->tableWidget->setColumnWidth(2,50);  // Address
-    ui->tableWidget->setColumnWidth(3,40);  // Type
-    ui->tableWidget->setColumnWidth(4,30);  // Scale
-    ui->tableWidget->setColumnWidth(5,30);  // RW
-    ui->tableWidget->setColumnWidth(6,30);  // Qty
-
-    // close file
-    file.close();
-}
-
-void
-MainWindow::
-loadCsvFile()
-{
-    int line = 0;
-
-    QString fileName = QFileDialog::getOpenFileName( this, tr("Open CSV file"), QDir::currentPath(), tr("CSV files (*.csv)") );
-    QFile file(fileName);
+	int line = 0;
+	QFile file(fileName);
 
     if (!file.open(QIODevice::ReadOnly)) return;
 
@@ -1891,7 +1914,8 @@ loadCsvFile()
         }
 
         QStringList valueList = s.split(',');
-        if (!valueList[0].contains("*"))
+
+        if (!valueList[0].contains("*") && !valueList[0].contains("#"))
         {
             // insert a new row
             ui->tableWidget->insertRow( ui->tableWidget->rowCount() );
@@ -1937,6 +1961,29 @@ loadCsvFile()
 
     // close file
     file.close();
+}
+
+
+void
+MainWindow::
+loadCsvTemplate()
+{
+    QFile file;
+    QString razorTemplatePath = QCoreApplication::applicationDirPath()+"/razor.csv";
+    QString eeaTemplatePath = QCoreApplication::applicationDirPath()+"/eea.csv";
+
+    if (ui->radioButton_190->isChecked()) loadFile(eeaTemplatePath);
+	else loadFile(razorTemplatePath);
+}
+
+void
+MainWindow::
+loadCsvFile()
+{
+    int line = 0;
+
+    QString fileName = QFileDialog::getOpenFileName( this, tr("Open CSV file"), QDir::currentPath(), tr("CSV files (*.csv)") );
+	loadFile(fileName);
 }
 
 void
@@ -2377,14 +2424,22 @@ onUploadEquation()
 
 void
 MainWindow::
-onUnlockFactoryDefaultBtnPressed()
+lockFCT(const int pipe, const int value)
 {
+	modbus_set_slave(LOOP.serialModbus, 1);
+    modbus_write_bit(LOOP.serialModbus, 999-ADDR_OFFSET, value);
+    delay();
+}
+
+void
+MainWindow::
+onUnlockFactoryDefault()
+{
+    ui->slaveID->setValue(1);        				// slave id (pipe serial number)
     ui->numCoils->setValue(1);                      // 1 byte
     ui->radioButton_183->setChecked(TRUE);          // coil type
     ui->functionCode->setCurrentIndex(4);           // function code
     ui->radioButton_184->setChecked(true);          // set value
-
-    /// unlock factory default registers
     ui->startAddr->setValue(999);                   // address 999
     onSendButtonPress();
     delay();
@@ -2393,14 +2448,13 @@ onUnlockFactoryDefaultBtnPressed()
 
 void
 MainWindow::
-onLockFactoryDefaultBtnPressed()
+onLockFactoryDefault()
 {
+	ui->slaveID->setValue(1);        				// slave id (pipe serial number)
     ui->numCoils->setValue(1);                      // 1 byte
     ui->radioButton_183->setChecked(TRUE);          // coil type
     ui->functionCode->setCurrentIndex(4);           // function code
-    ui->radioButton_185->setChecked(true);          // set value
-
-    /// unlock factory default registers
+    ui->radioButton_184->setChecked(false);         // set value
     ui->startAddr->setValue(999);                   // address 999
     onSendButtonPress();
     delay();
@@ -2442,8 +2496,8 @@ void
 MainWindow::
 connectProfiler()
 {
-    connect(ui->radioButton_193, SIGNAL(pressed()), this, SLOT(onUnlockFactoryDefaultBtnPressed()));
-    connect(ui->radioButton_192, SIGNAL(pressed()), this, SLOT(onLockFactoryDefaultBtnPressed()));
+    connect(ui->radioButton_193, SIGNAL(pressed()), this, SLOT(onUnlockFactoryDefault()));
+    connect(ui->radioButton_192, SIGNAL(pressed()), this, SLOT(onLockFactoryDefault()));
     connect(ui->pushButton_2, SIGNAL(pressed()), this, SLOT(onUpdateFactoryDefaultPressed()));
     connect(ui->startEquationBtn, SIGNAL(pressed()), this, SLOT(onEquationButtonPressed()));
     connect(ui->radioButton_189, SIGNAL(toggled(bool)), this, SLOT(onDownloadButtonChecked(bool)));
@@ -2941,15 +2995,6 @@ validateSerialNumber(modbus_t * serialModbus)
             memset( dest, 0, 1024 );
             modbus_set_slave( serialModbus, PIPE[pipe].slave->text().toInt());
 
-			/// unlock FCT registers
-            modbus_write_bit(serialModbus,999,1);
-
-			if (isModbusTransmissionFailed) 
-			{
-        		informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"Invalid Seial Port Connection!");
-				return false;
-			}
-
             /// read pipe serial number
             sendCalibrationRequest(FLOAT_R, serialModbus, FUNC_READ_INT, LOOP.ID_SN_PIPE, BYTE_READ_INT, ret, dest, dest16, is16Bit, writeAccess, funcType);
 
@@ -2962,9 +3007,6 @@ validateSerialNumber(modbus_t * serialModbus)
                 LOOP.isCal = false;
                 PIPE[pipe].status = DISABLED;
 
-                /// lock FCT registers
-                modbus_write_bit(serialModbus,999,0);
-
                 /// sn is valid but serial port invalid then it's an error
                 return false;
             }
@@ -2973,9 +3015,6 @@ validateSerialNumber(modbus_t * serialModbus)
                 PIPE[pipe].status = ENABLED;
                 PIPE[pipe].checkBox->setChecked(true);
             }
-
-            /// lock FCT registers
-            modbus_write_bit(serialModbus,999,0);
         }
         else
         {
@@ -3334,6 +3373,10 @@ readMasterPipe()
 
     /// phase
     LOOP.masterPhase = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_PHASE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    delay(SLEEP_TIME);
+
+	/// pressure 
+    LOOP.masterPressure = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_PRESSURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
     delay(SLEEP_TIME);
 
     /// update master pipe display
@@ -4024,12 +4067,10 @@ inject(const int coil,const bool value)
 {
     uint8_t dest[1024];
 
-	(value) ? updateCurrentStage(ORANGE,"INJECT") : updateCurrentStage(BLACK,"INJECT-STANDBY");
-
     /// set slave
     memset( dest, 0, 1024 );
     modbus_set_slave(LOOP.serialModbus, CONTROLBOX_SLAVE);
-    modbus_write_bit(LOOP.serialModbus,coil-ADDR_OFFSET, value );
+    modbus_write_bit(LOOP.serialModbus,coil-ADDR_OFFSET, value);
 }
 
 
@@ -4097,93 +4138,29 @@ onFunctionCodeChanges()
 
 void
 MainWindow::
-onFloatButtonPressed(bool enabled)
+onReadButtonPressed()
 {
-    if (enabled) ui->numCoils->setValue(2); // quantity
-    if (ui->radioButton_187->isChecked())
-    {
-        onReadButtonPressed(true);
-    }
-    else
-    {
-        onWriteButtonPressed(true);
-    }
+	ui->groupBox_103->setEnabled(false);
+   	ui->groupBox_106->setEnabled(false);
+   	ui->groupBox_107->setEnabled(false);
 
-    ui->groupBox_103->setEnabled(TRUE);
-    ui->groupBox_106->setEnabled(FALSE);
-    ui->groupBox_107->setEnabled(FALSE);
-    ui->lineEdit_111->clear();
+    if (ui->radioButton_181->isChecked()) ui->functionCode->setCurrentIndex(3); // float
+    else if (ui->radioButton_182->isChecked()) ui->functionCode->setCurrentIndex(3); // integer
+    else ui->functionCode->setCurrentIndex(0); // coil
 }
 
-void
-MainWindow::
-onIntegerButtonPressed(bool enabled)
-{
-    if (enabled) ui->numCoils->setValue(1);
-    if (ui->radioButton_187->isChecked())
-    {
-        onReadButtonPressed(true);
-    }
-    else
-    {
-        onWriteButtonPressed(true);
-    }
-    ui->groupBox_103->setEnabled(FALSE);
-    ui->groupBox_106->setEnabled(TRUE);
-    ui->groupBox_107->setEnabled(FALSE);
-    ui->lineEdit_109->clear();
- }
 
 void
 MainWindow::
-onCoilButtonPressed(bool enabled)
+onWriteButtonPressed()
 {
-    if (enabled) ui->numCoils->setValue(1);
-    if (ui->radioButton_187->isChecked())
-    {
-        onReadButtonPressed(true);
-    }
-    else
-    {
-        onWriteButtonPressed(true);
-    }
+    ui->groupBox_103->setEnabled(true);
+    ui->groupBox_106->setEnabled(true);
+    ui->groupBox_107->setEnabled(true);
 
-    ui->groupBox_103->setEnabled(FALSE);
-    ui->groupBox_106->setEnabled(FALSE);
-    ui->groupBox_107->setEnabled(TRUE);
-    ui->lineEdit_109->clear();
-    ui->lineEdit_111->clear();
-}
-
-void
-MainWindow::
-onReadButtonPressed(bool enabled)
-{
-    if (enabled)
-    {
-        ui->lineEdit_109->setReadOnly(true);
-        ui->lineEdit_111->setReadOnly(true);
-        ui->groupBox_107->setEnabled(true);
-    }
-
-    onFunctionCodeChanges();
-}
-
-void
-MainWindow::
-onWriteButtonPressed(bool enabled)
-{
-    if (enabled)
-    {
-        if (ui->radioButton_181->isChecked())
-            ui->lineEdit_109->setReadOnly(false);
-        else if (ui->radioButton_182->isChecked())
-            ui->lineEdit_111->setReadOnly(false);
-        else
-            ui->groupBox_107->setEnabled(true);
-    }
-
-    onFunctionCodeChanges();
+	if (ui->radioButton_181->isChecked()) ui->functionCode->setCurrentIndex(7); // float
+    else if (ui->radioButton_182->isChecked()) ui->functionCode->setCurrentIndex(5); // integer
+    else ui->functionCode->setCurrentIndex(4); // coil
 }
 
 
@@ -4222,35 +4199,28 @@ onUpdateRegisters(const bool isEEA)
 {
     if (isEEA)
     {
-        LOOP.ID_SN_PIPE = 1;
-        LOOP.ID_WATERCUT = 11;
-        LOOP.ID_SALINITY = 21;
-        LOOP.ID_OIL_ADJUST = 23;
-        LOOP.ID_TEMPERATURE = 15;
-        LOOP.ID_WATER_ADJUST = 25;
-        LOOP.ID_FREQ = 111;
-        LOOP.ID_OIL_RP = 115;
+        LOOP.ID_SN_PIPE = EEA_ID_SN_PIPE;
+        LOOP.ID_WATERCUT = EEA_ID_WATERCUT;
+        LOOP.ID_SALINITY = EEA_ID_SALINITY;
+        LOOP.ID_OIL_ADJUST = EEA_ID_OIL_ADJUST;
+        LOOP.ID_TEMPERATURE = EEA_ID_TEMPERATURE;
+        LOOP.ID_WATER_ADJUST = EEA_ID_WATER_ADJUST;
+        LOOP.ID_FREQ = EEA_ID_FREQ;
+        LOOP.ID_OIL_RP = EEA_ID_OIL_RP;
+		LOOP.ID_PRESSURE = EEA_ID_PRESSURE;
     }
     else
     {
-        LOOP.ID_SN_PIPE = 201;
-        LOOP.ID_WATERCUT = 3;
-        LOOP.ID_TEMPERATURE = 33; /// REG_TEMP_USER
-        LOOP.ID_SALINITY = 9;
-        LOOP.ID_OIL_ADJUST = 15;
-        LOOP.ID_WATER_ADJUST = 17;
-        LOOP.ID_FREQ = 19;
-        LOOP.ID_OIL_RP = 61;
+		LOOP.ID_SN_PIPE = RAZ_ID_SN_PIPE;
+        LOOP.ID_WATERCUT = RAZ_ID_WATERCUT;
+        LOOP.ID_SALINITY = RAZ_ID_SALINITY;
+        LOOP.ID_OIL_ADJUST = RAZ_ID_OIL_ADJUST;
+        LOOP.ID_TEMPERATURE = RAZ_ID_TEMPERATURE;
+        LOOP.ID_WATER_ADJUST = RAZ_ID_WATER_ADJUST;
+        LOOP.ID_FREQ = RAZ_ID_FREQ;
+        LOOP.ID_OIL_RP = RAZ_ID_OIL_RP;
+		LOOP.ID_PRESSURE = EEA_ID_PRESSURE;
     }
-
-    /// master pipe EEA
-    LOOP.ID_MASTER_WATERCUT = 11;
-    LOOP.ID_MASTER_TEMPERATURE = 15;
-    LOOP.ID_MASTER_SALINITY = 21;
-    LOOP.ID_MASTER_OIL_ADJUST = 23;
-    LOOP.ID_MASTER_OIL_RP = 115;
-    LOOP.ID_MASTER_FREQ = 111;
-    LOOP.ID_MASTER_PHASE = 17;
 }
 
 
@@ -4284,7 +4254,6 @@ void
 MainWindow::
 updateMasterPipeStatus(const double watercut, const double freq, const double temp, const double phase, const double adj, const double salt)
 {
-    //updateMasterPipeStatus(LOOP.masterWatercut,LOOP.masterFreq,LOOP.masterTemp,LOOP.masterPhase,LOOP.masterOilAdj,LOOP.masterSalinity);
     if (!isModbusTransmissionFailed)
     {
         ui->lineEdit_20->setText(QString("%1").arg(watercut,7,'f',2,' '));
@@ -4317,13 +4286,13 @@ createDataStream(const int pipe, QString & data_stream)
 {
     if (LOOP.isMaster)
     {
-        if (LOOP.runMode == SIMULATION_RUN) data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.masterWatercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(PIPE[pipe].watercut,8,'f',2,' ');
-        else data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.masterWatercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
+        if (LOOP.runMode == SIMULATION_RUN) data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.masterWatercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterPressure,8,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(PIPE[pipe].watercut,8,'f',2,' ');
+        else data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.masterWatercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterPressure,8,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
     }
     else
     {
-        if (LOOP.runMode == SIMULATION_RUN) data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(PIPE[pipe].watercut,8,'f',2,' ');
-        else data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18 %19 %20").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].measai,12,'f',2,' ').arg(PIPE[pipe].trimai,12,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
+        if (LOOP.runMode == SIMULATION_RUN) data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterPressure,8,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(PIPE[pipe].watercut,8,'f',2,' ');
+        else data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterPressure,8,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
     }
 
     delay(SLEEP_TIME);
@@ -4336,3 +4305,18 @@ mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) LOOP.chart->zoomReset();
 }
+
+
+void
+MainWindow::
+onDataTypeChanged()
+{
+	delay(SLEEP_TIME);
+
+	/// number of objects
+	if (ui->radioButton_181->isChecked()) ui->numCoils->setValue(2); // float
+	else ui->numCoils->setValue(1); // int or coil
+
+	onFunctionCodeChanges();
+}
+

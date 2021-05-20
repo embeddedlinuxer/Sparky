@@ -140,23 +140,24 @@ compiler_rcc_clean:
 	-$(DEL_FILE) debug\qrc_sparky.cpp
 debug/qrc_sparky.cpp: ../Sparky/data/sparky.qrc \
 		../../../Qt/5.15.2/mingw81_32/bin/rcc.exe \
-		../Sparky/data/stop.png \
-		../Sparky/data/save.png \
 		../Sparky/data/open.png \
+		../Sparky/data/pause.png \
+		../Sparky/data/water.png \
 		../Sparky/data/play.png \
-		../Sparky/data/forward.png \
 		../Sparky/data/disconnect.png \
 		../Sparky/data/red.ico \
-		../Sparky/data/splash.png \
-		../Sparky/data/icon.ico \
 		../Sparky/data/splash_2.png \
-		../Sparky/data/stopInjection.png \
-		../Sparky/data/pause.png \
+		../Sparky/data/sync.png \
 		../Sparky/data/pipe.png \
-		../Sparky/data/connect.png \
+		../Sparky/data/stopInjection.png \
 		../Sparky/data/settings.png \
-		../Sparky/data/green.ico \
-		../Sparky/data/water.png
+		../Sparky/data/splash.png \
+		../Sparky/data/save.png \
+		../Sparky/data/icon.ico \
+		../Sparky/data/connect.png \
+		../Sparky/data/stop.png \
+		../Sparky/data/forward.png \
+		../Sparky/data/green.ico
 	G:\Qt\5.15.2\mingw81_32\bin\rcc.exe -name sparky ..\Sparky\data\sparky.qrc -o debug\qrc_sparky.cpp
 
 compiler_moc_predefs_make_all: debug/moc_predefs.h
@@ -908,10 +909,8 @@ debug/main.o: ../Sparky/src/main.cpp ../../../Qt/5.15.2/mingw81_32/include/QtWid
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/QThread
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o debug\main.o ..\Sparky\src\main.cpp
 
-debug/mainwindow.o: ../Sparky/src/mainwindow.cpp ../../../Qt/5.15.2/mingw81_32/include/QtConcurrent/QtConcurrent \
-		../../../Qt/5.15.2/mingw81_32/include/QtConcurrent/QtConcurrentDepends \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/QtCore \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/QtCoreDepends \
+debug/mainwindow.o: ../Sparky/src/mainwindow.cpp ../../../Qt/5.15.2/mingw81_32/include/QtCore/QRegExp \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qregexp.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qglobal.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qconfig-bootstrapped.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qconfig.h \
@@ -933,20 +932,24 @@ debug/mainwindow.o: ../Sparky/src/mainwindow.cpp ../../../Qt/5.15.2/mingw81_32/i
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qmutex.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qnumeric.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qversiontagging.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qabstractanimation.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobject.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobjectdefs.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qnamespace.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobjectdefs_impl.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstring.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qchar.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qbytearray.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qrefcount.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qnamespace.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qarraydata.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringliteral.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringalgorithms.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringview.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringbuilder.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtConcurrent/QtConcurrent \
+		../../../Qt/5.15.2/mingw81_32/include/QtConcurrent/QtConcurrentDepends \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/QtCore \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/QtCoreDepends \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qabstractanimation.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobject.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobjectdefs.h \
+		../../../Qt/5.15.2/mingw81_32/include/QtCore/qobjectdefs_impl.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qlist.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qalgorithms.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qiterator.h \
@@ -957,7 +960,6 @@ debug/mainwindow.o: ../Sparky/src/mainwindow.cpp ../../../Qt/5.15.2/mingw81_32/i
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qpoint.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qbytearraylist.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringlist.h \
-		../../../Qt/5.15.2/mingw81_32/include/QtCore/qregexp.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qstringmatcher.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qcoreevent.h \
 		../../../Qt/5.15.2/mingw81_32/include/QtCore/qscopedpointer.h \
