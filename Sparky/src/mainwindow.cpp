@@ -1833,15 +1833,51 @@ onActionSync()
 			delay(SLEEP_TIME);
 
 			/// reset PDI_TEMP_ADJ
-   			sendCalibrationRequest(FLOAT_W, LOOP.serialModbus, FUNC_WRITE_FLOAT, FCT_RAZ_TEMP_ADJ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType, QString::number(fctAdjTemp + tempDiff));
-			delay(SLEEP_TIME);
+			sendRequest(PIPE[pipe].slave->text().toInt(), FCT_RAZ_TEMP_ADJ, 2, MD_FLOAT, MD_WRITE, FUNC_WRITE_FLOAT, fctAdjTemp + tempDiff, 0, false);
+   			//sendCalibrationRequest(FLOAT_W, LOOP.serialModbus, FUNC_WRITE_FLOAT, FCT_RAZ_TEMP_ADJ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType, );
 
-			lockFCT(pipe, LOCK);
-			delay(SLEEP_TIME);
+			//lockFCT(pipe, LOCK);
+			//delay(SLEEP_TIME);
 		}
 	}
 }
 
+void
+MainWindow::
+sendRequest(const int slaveID, const int addr, const int num, const int data_type, const int rw, const int func, const double f_val, const int i_val, const bool c_val = false)
+{
+	ui->slaveID->setValue(slaveID);									 // slave id
+    ui->startAddr->setValue(addr);                  			 	 // address
+    ui->numCoils->setValue(num);                    				 // bytes
+
+    if (data_type == MD_FLOAT) ui->radioButton_181->setChecked(true);// float type
+	else if (data_type == MD_INT)ui->radioButton_182->setChecked(true); // integer type
+	else ui->radioButton_183->setChecked(true);						 // coil type
+
+    if (rw == MD_WRITE) ui->radioButton_186->setChecked(true);       // write 
+    else ui->radioButton_187->setChecked(true);          			 // read 
+
+    if (rw == MD_WRITE)												 // function code
+	{
+		if (data_type == MD_FLOAT) ui->functionCode->setCurrentIndex(7);
+		else if (data_type == MD_INT) ui->functionCode->setCurrentIndex(5);
+		else ui->functionCode->setCurrentIndex(4);
+	}
+	else
+	{
+		if (data_type == MD_FLOAT) ui->functionCode->setCurrentIndex(3);
+		else if (data_type == MD_INT) ui->functionCode->setCurrentIndex(3);
+		else ui->functionCode->setCurrentIndex(0);
+	}
+
+ 	ui->lineEdit_109->setText(QString::number(f_val));				 // set float value
+ 	ui->lineEdit_111->setText(QString::number(i_val));				 // set integer value	
+    if (c_val) ui->radioButton_184->setChecked(true);          		 // set coil true 
+    else ui->radioButton_185->setChecked(true);          			 // set coil false
+
+    onSendButtonPress();
+    delay();
+}
 
 void
 MainWindow::
@@ -2426,18 +2462,17 @@ void
 MainWindow::
 lockFCT(const int pipe, const int value)
 {
-	modbus_set_slave(LOOP.serialModbus, 1);
-    modbus_write_bit(LOOP.serialModbus, 999-ADDR_OFFSET, value);
-    delay();
+	ui->slaveID->setValue(PIPE[pipe].slave->text().toInt());
+	(value) ? onUnlockFactoryDefault() : onLockFactoryDefault();
 }
 
 void
 MainWindow::
 onUnlockFactoryDefault()
 {
-    ui->slaveID->setValue(1);        				// slave id (pipe serial number)
     ui->numCoils->setValue(1);                      // 1 byte
-    ui->radioButton_183->setChecked(TRUE);          // coil type
+    ui->radioButton_183->setChecked(true);          // coil type
+    ui->radioButton_186->setChecked(true);          // write 
     ui->functionCode->setCurrentIndex(4);           // function code
     ui->radioButton_184->setChecked(true);          // set value
     ui->startAddr->setValue(999);                   // address 999
@@ -2450,11 +2485,11 @@ void
 MainWindow::
 onLockFactoryDefault()
 {
-	ui->slaveID->setValue(1);        				// slave id (pipe serial number)
     ui->numCoils->setValue(1);                      // 1 byte
-    ui->radioButton_183->setChecked(TRUE);          // coil type
+    ui->radioButton_183->setChecked(true);          // coil type
+    ui->radioButton_186->setChecked(true);          // write 
     ui->functionCode->setCurrentIndex(4);           // function code
-    ui->radioButton_184->setChecked(false);         // set value
+    ui->radioButton_185->setChecked(true);          // set value
     ui->startAddr->setValue(999);                   // address 999
     onSendButtonPress();
     delay();

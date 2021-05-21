@@ -31,6 +31,12 @@
 #define SERIES_WATERCUT             0
 #define SERIES_RP                   1 
 
+#define MD_FLOAT					0
+#define MD_INT						1
+#define MD_COIL						2
+#define MD_WRITE                   	3 
+#define MD_READ                     4 
+	
 #define STABILITY_CHECK				true
 #define NO_STABILITY_CHECK			false
 
@@ -411,6 +417,7 @@ public:
     int setupModbusPort_5();
     int setupModbusPort_6();
 
+	void sendRequest(const int, const int, const int, const int, const int, const int, const double, const int, const bool);
 	void createDataStream(const int pipe, QString & data_stream);
 	void startTempRun();
 	void updateCurrentStage(const QString, const QString);
