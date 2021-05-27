@@ -163,9 +163,6 @@
 
 #define FILE_LIST                   "Filelist.LST"
 
-#define LOCK				0
-#define UNLOCK				1
-
 #define TIMER_DELAY         6000
 #define NO_FILE             0
 #define S_CALIBRAT         	1 
@@ -176,7 +173,7 @@
 #define SLEEP_TIME          300 // 300 milisecond
 #define SLAVE_CALIBRATION   0xFA
 #define FUNC_READ_FLOAT     0x04
-#define FUNC_READ_INT       0x04 
+#define FUNC_READ_INT       0x03 
 #define FUNC_READ_COIL      0x01 
 #define FUNC_WRITE_FLOAT    0x10
 #define FUNC_WRITE_INT      0x06
@@ -417,7 +414,8 @@ public:
     int setupModbusPort_5();
     int setupModbusPort_6();
 
-	void sendRequest(const int, const int, const int, const int, const int, const int, const double, const int, const bool);
+	double read_request(int, int, int, int, uint8_t *, uint16_t *, bool);
+	void write_request(int, int, double, int, bool);
 	void createDataStream(const int pipe, QString & data_stream);
 	void startTempRun();
 	void updateCurrentStage(const QString, const QString);
@@ -464,10 +462,8 @@ public:
     float toFloat(QByteArray arr);
     void initializeModbusMonitor();
     void onFunctionCodeChanges();
-    double sendCalibrationRequest(int, modbus_t *, int, int, int, int, uint8_t *, uint16_t *, bool, bool, QString, QString);
     void updateChart(QSplineSeries *, double, double, double, double, double, double, double, double);
     void updateGraph(const int, const double, const double, const int);
-	void lockFCT(const int, const int);
 
 protected:
 	void mousePressEvent(QMouseEvent *event) override;

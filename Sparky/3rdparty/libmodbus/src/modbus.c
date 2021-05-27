@@ -1297,7 +1297,7 @@ static int read_registers(modbus_t *ctx, int function, int addr, int nb,uint16_t
         return -1;
     }
 
-    // will twesk the msg if extended slave id is active
+    // will modify the msg if extended slave id is active
     req_length = ctx->backend->build_request_basis(ctx, function, addr, nb, req);
 
     rc = send_msg(ctx, req, req_length);
@@ -1347,8 +1347,8 @@ int modbus_read_registers(modbus_t *ctx, int addr, int nb, uint16_t *dest)
         return -1;
     }
 
-    status = read_registers(ctx, MODBUS_FC_READ_HOLDING_REGISTERS,
-                            addr, nb, dest);
+    status = read_registers(ctx, MODBUS_FC_READ_HOLDING_REGISTERS,addr, nb, dest);
+                            
     return status;
 }
 
@@ -1517,9 +1517,8 @@ int modbus_write_registers(modbus_t *ctx, int addr, int nb, const uint16_t *src)
         return -1;
     }
 
-    req_length = ctx->backend->build_request_basis(ctx,
-                                                   MODBUS_FC_WRITE_MULTIPLE_REGISTERS,
-                                                   addr, nb, req);
+    req_length = ctx->backend->build_request_basis(ctx, MODBUS_FC_WRITE_MULTIPLE_REGISTERS, addr, nb, req);
+
     byte_count = nb * 2;
     req[req_length++] = byte_count;
 
@@ -1529,6 +1528,7 @@ int modbus_write_registers(modbus_t *ctx, int addr, int nb, const uint16_t *src)
     }
 
     rc = send_msg(ctx, req, req_length);
+
     if (rc > 0) {
         uint8_t rsp[MAX_MESSAGE_LENGTH];
 

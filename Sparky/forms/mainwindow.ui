@@ -1089,7 +1089,7 @@
        </property>
        <property name="font">
         <font>
-         <pointsize>22</pointsize>
+         <pointsize>20</pointsize>
          <weight>75</weight>
          <bold>true</bold>
          <strikeout>false</strikeout>
@@ -1107,12 +1107,12 @@
         <rect>
          <x>20</x>
          <y>429</y>
-         <width>91</width>
+         <width>111</width>
          <height>31</height>
         </rect>
        </property>
        <property name="text">
-        <string>CURRENT STAGE</string>
+        <string>CURRENT PROCESS</string>
        </property>
       </widget>
      </widget>
@@ -2197,7 +2197,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>4</number>
       </property>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
@@ -2316,7 +2316,7 @@
           <number>65535</number>
          </property>
          <property name="value">
-          <number>5</number>
+          <number>9</number>
          </property>
         </widget>
         <widget class="QSpinBox" name="numCoils">
@@ -2949,7 +2949,7 @@
            <x>10</x>
            <y>20</y>
            <width>681</width>
-           <height>351</height>
+           <height>321</height>
           </rect>
          </property>
          <property name="alternatingRowColors">
@@ -3003,27 +3003,27 @@
         </property>
         <property name="geometry">
          <rect>
-          <x>540</x>
-          <y>27</y>
-          <width>151</width>
-          <height>32</height>
+          <x>610</x>
+          <y>18</y>
+          <width>81</width>
+          <height>41</height>
          </rect>
         </property>
         <property name="text">
-         <string>Start</string>
+         <string>S T A R T</string>
         </property>
        </widget>
        <widget class="QGroupBox" name="groupBox_104">
         <property name="geometry">
          <rect>
-          <x>140</x>
-          <y>20</y>
-          <width>151</width>
-          <height>41</height>
+          <x>290</x>
+          <y>10</y>
+          <width>211</width>
+          <height>51</height>
          </rect>
         </property>
         <property name="title">
-         <string>Direction</string>
+         <string>DIRECTION</string>
         </property>
         <property name="checkable">
          <bool>false</bool>
@@ -3034,14 +3034,14 @@
         <widget class="QRadioButton" name="radioButton_188">
          <property name="geometry">
           <rect>
-           <x>10</x>
+           <x>20</x>
            <y>10</y>
-           <width>51</width>
-           <height>31</height>
+           <width>91</width>
+           <height>41</height>
           </rect>
          </property>
          <property name="text">
-          <string>Upload</string>
+          <string>UPLOAD</string>
          </property>
          <property name="checked">
           <bool>true</bool>
@@ -3050,28 +3050,28 @@
         <widget class="QRadioButton" name="radioButton_189">
          <property name="geometry">
           <rect>
-           <x>70</x>
+           <x>110</x>
            <y>10</y>
-           <width>71</width>
-           <height>31</height>
+           <width>101</width>
+           <height>41</height>
           </rect>
          </property>
          <property name="text">
-          <string>Download</string>
+          <string>DOWNLOAD</string>
          </property>
         </widget>
        </widget>
        <widget class="QGroupBox" name="groupBox_110">
         <property name="geometry">
          <rect>
-          <x>18</x>
-          <y>20</y>
+          <x>160</x>
+          <y>10</y>
           <width>113</width>
-          <height>41</height>
+          <height>51</height>
          </rect>
         </property>
         <property name="title">
-         <string>Product</string>
+         <string>PRODUCT</string>
         </property>
         <widget class="QRadioButton" name="radioButton_190">
          <property name="geometry">
@@ -3079,7 +3079,7 @@
            <x>10</x>
            <y>10</y>
            <width>41</width>
-           <height>31</height>
+           <height>41</height>
           </rect>
          </property>
          <property name="text">
@@ -3092,7 +3092,7 @@
            <x>60</x>
            <y>10</y>
            <width>51</width>
-           <height>31</height>
+           <height>41</height>
           </rect>
          </property>
          <property name="text">
@@ -3106,15 +3106,38 @@
        <widget class="QPushButton" name="pushButton_2">
         <property name="geometry">
          <rect>
-          <x>380</x>
-          <y>27</y>
-          <width>141</width>
-          <height>32</height>
+          <x>520</x>
+          <y>18</y>
+          <width>81</width>
+          <height>41</height>
          </rect>
         </property>
         <property name="text">
-         <string>Update Factory Default</string>
+         <string>UPDATE FCT</string>
         </property>
+       </widget>
+       <widget class="QGroupBox" name="groupBox_14">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>131</width>
+          <height>51</height>
+         </rect>
+        </property>
+        <property name="title">
+         <string>SERIAL NO / SLAVE ID</string>
+        </property>
+        <widget class="QLineEdit" name="lineEdit_32">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>20</y>
+           <width>111</width>
+           <height>20</height>
+          </rect>
+         </property>
+        </widget>
        </widget>
       </widget>
      </widget>

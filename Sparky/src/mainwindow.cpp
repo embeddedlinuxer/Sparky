@@ -1464,10 +1464,9 @@ onEquationTableChecked(bool isTable)
     if (!isTable) ui->tableWidget->setRowCount(0);
 }
 
-
-double
+void
 MainWindow::
-sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int address, int num, int ret, uint8_t * dest, uint16_t * dest16, bool is16Bit, bool writeAccess, QString funcType, QString w_value = "0")
+write_request(int func, int address, double dval, int ival, bool bval)
 {
     //////// address offset /////////
     int addr = address - ADDR_OFFSET;
@@ -1475,53 +1474,50 @@ sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int addr
 
     switch( func )
     {
-        case MODBUS_FC_READ_COILS:
-            break;
-        case MODBUS_FC_READ_DISCRETE_INPUTS:
-            ret = modbus_read_input_bits( serialModbus, addr, num, dest );
-            break;
-        case MODBUS_FC_READ_HOLDING_REGISTERS:
-            ret = modbus_read_registers( serialModbus, addr, num, dest16 );
-            is16Bit = true;
-            break;
-        case MODBUS_FC_READ_INPUT_REGISTERS:
-            ret = modbus_read_input_registers(serialModbus, addr, num, dest16 );
-            is16Bit = true;
-            break;
-        case MODBUS_FC_WRITE_SINGLE_COIL:
-            ret = modbus_write_bit( serialModbus, addr, (w_value == "1") ? 1 : 0);
-            writeAccess = true;
-            num = 1;
-            break;
-        case MODBUS_FC_WRITE_SINGLE_REGISTER:
-            ret = modbus_write_register( serialModbus, addr, w_value.toInt() );
-            writeAccess = true;
-            num = 1;
-            break;
-        case MODBUS_FC_WRITE_MULTIPLE_COILS:
-        {
-            uint8_t * data = new uint8_t[num];
-            for( int i = 0; i < num; ++i ) data[i] = ui->regTable->item( i, DataColumn )->text().toInt(0, 0);
-            ret = modbus_write_bits( serialModbus, addr, num, data );
-            delete[] data;
-            writeAccess = true;
-            break;
-        }
-        case MODBUS_FC_WRITE_MULTIPLE_REGISTERS:
+        case FUNC_WRITE_COIL:
+            modbus_write_bit( LOOP.serialModbus, addr, bval);
+			break;
+        case FUNC_WRITE_INT	:
+            modbus_write_register( LOOP.serialModbus, addr, ival);
+			break;
+        case FUNC_WRITE_FLOAT:
         {
             float value;
-            QString qvalue = w_value;
+            QString qvalue = QString::number(dval);
             QTextStream floatTextStream(&qvalue);
             floatTextStream >> value;
             quint16 (*reg)[2] = reinterpret_cast<quint16(*)[2]>(&value);
             uint16_t * data = new uint16_t[2];
             data[0] = (*reg)[1];
             data[1] = (*reg)[0];
-            ret = modbus_write_registers( serialModbus, addr, 2, data );
+            modbus_write_registers( LOOP.serialModbus, addr, 2, data );
             delete[] data;
-            writeAccess = true;
-            break;
+			break;
         }
+        default:
+			break;
+    }
+}
+
+
+double
+MainWindow::
+read_request(int func, int address, int num, int ret, uint8_t * dest, uint16_t * dest16, bool is16Bit)
+{
+    //////// address offset /////////
+    int addr = address - ADDR_OFFSET;
+    /////////////////////////////////
+
+    switch( func )
+    {
+        case FUNC_READ_COIL:
+            ret = modbus_read_bits( LOOP.serialModbus, addr, num, dest );
+            break;
+		case FUNC_READ_INT:
+		case FUNC_READ_FLOAT:
+            ret = modbus_read_input_registers(LOOP.serialModbus, addr, num, dest16 );
+            is16Bit = true;
+            break;
         default:
             break;
     }
@@ -1530,16 +1526,11 @@ sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int addr
     {
         isModbusTransmissionFailed = false;
 
-        if( writeAccess )
-        {
-            m_statusInd->setStyleSheet( "background: #0b0;" );
-            m_statusTimer->start( 2000 );
-        }
-        else
         {
             QString qs_num;
             QString qs_output = "0x";
             bool ok = false;
+            float d;
 
             for( int i = 0; i < num; ++i )
             {
@@ -1550,22 +1541,22 @@ sendCalibrationRequest(int dataType, modbus_t * serialModbus, int func, int addr
                 qs_tmp.sprintf("%04x", data);
                 qs_output.append(qs_tmp);
 
-                if (dataType == INT_R)  // INT_READ
+                if (func == FUNC_READ_INT)
                 {
                     return data;
                 }
-                else if (dataType == COIL_R)  // COIL_READ
+                else if (func == FUNC_READ_COIL)
                 {
                     return (data) ? 1 : 0;
                 }
             }
 
-            double d;
-            if (dataType == FLOAT_R) // FLOAT_READ
+            if (func == FUNC_READ_FLOAT)
             {
                 QByteArray array = QByteArray::fromHex(qs_output.toLatin1());
                 d = toFloat(array);
-                return d;
+                QString dv = QString::number(d,'f',10);
+                return dv.toDouble();
             }
         }
     }
@@ -1750,10 +1741,11 @@ void
 MainWindow::
 onActionReadMasterPipe()
 {
+	updateCurrentStage(BLACK,"READ MASTER PIPE");
 	if (!LOOP.isCal) readMasterPipe();
 	else if (LOOP.isPause) readMasterPipe();
 	else informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),"UNABLE TO READ MASTER PIPE MANUALLY   " ,"Unable To Read Master Pipe Manually During Calibration!");
-
+	updateCurrentStage(RED,"S T O P");
 }
 
 void
@@ -1782,101 +1774,75 @@ onActionSync()
     {
         if (!PIPE[pipe].slave->text().isEmpty())
 		{
+			int sn;
+			double temp, fctAdjTemp, masterTemp;
             uint8_t dest[1024];
             uint16_t * dest16 = (uint16_t *) dest;
             int ret = -1;
             bool is16Bit = false;
             bool writeAccess = false;
-            const QString funcType = descriptiveDataTypeName( FUNC_READ_INT );
+            //const QString funcType = descriptiveDataTypeName( FUNC_READ_INT );
 
             /// set slave
             memset( dest, 0, 1024 );
             modbus_set_slave( LOOP.serialModbus, PIPE[pipe].slave->text().toInt());
 
             /// read pipe serial number
-            sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_INT, RAZ_ID_SN_PIPE, BYTE_READ_INT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+   			sn = read_request(FUNC_READ_INT, RAZ_ID_SN_PIPE, BYTE_READ_INT, ret, dest, dest16, is16Bit);
+			delay();
 
-            /// verify if serial number matches with pipe
-            if (*dest16 != PIPE[pipe].slave->text().toInt())
+			//if (ui->lineEdit_111->text() != PIPE[pipe].slave->text())
+			if (QString::number(sn) != PIPE[pipe].slave->text())
             {
         		informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"Invalid Seial Number!");
-
-                /// sn is valid but serial port invalid then it's an error
 				onActionStop();
                 return;
             }
 
-			double temp, fctAdjTemp, tempDiff;
-   			temp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, RAZ_ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-   			while (temp != temp) temp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, RAZ_ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-			delay(SLEEP_TIME);
-			
-			fctAdjTemp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, FCT_RAZ_TEMP_ADJ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-			while (fctAdjTemp != fctAdjTemp) fctAdjTemp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, FCT_RAZ_TEMP_ADJ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
-			delay(SLEEP_TIME);
+			updateCurrentStage(BLACK,"TEMP IN SYNC");
 
-		    if ((temp != temp) || (fctAdjTemp != fctAdjTemp))
-//		      || (fctAdjTemp != fctAdjTemp) || (fctAdjTemp > std::numeric_limits<qreal>::max()) || (fctAdjTemp < -std::numeric_limits<qreal>::max()))
+			/// get master temp
+			masterTemp = ui->lineEdit_29->text().toDouble();
+
+			/// get target temp
+   			temp = read_request(FUNC_READ_FLOAT, RAZ_ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
+			delay();
+   			while (temp != temp) 
 			{
-				informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"Failed to Read. Try Again!");
-        		return;
-    		}
+				temp = read_request(FUNC_READ_FLOAT, RAZ_ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
+				delay();
+			}
 
-			double masterTemp = ui->lineEdit_29->text().toDouble();
-			tempDiff = masterTemp - temp;
+			/// get PDI_TEMP_ADJ
+			fctAdjTemp = read_request(FUNC_READ_FLOAT, FCT_RAZ_TEMP_ADJ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
+			delay();
+			while (fctAdjTemp != fctAdjTemp) 
+			{
+				fctAdjTemp = read_request(FUNC_READ_FLOAT, FCT_RAZ_TEMP_ADJ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
+				delay();
+			}
 
-			qDebug() << PIPE[pipe].slave->text();	
-			qDebug() << "TARGET TEMP: " << temp;	
-			qDebug() << "NEW PDI_TEMP_ADJ: "<< fctAdjTemp + tempDiff;	
+			/// unlock fct
+			write_request(FUNC_WRITE_COIL, 999, 0, 0, true);
+			delay();
 
-			lockFCT(pipe, UNLOCK);
-			delay(SLEEP_TIME);
+			/// update PDI_TEMP_ADJ
+			while (abs(temp-masterTemp) > 0.1)
+			{
+				write_request(FUNC_WRITE_FLOAT, FCT_RAZ_TEMP_ADJ, fctAdjTemp + masterTemp - temp, 0, true);
+				delay();
 
-			/// reset PDI_TEMP_ADJ
-			sendRequest(PIPE[pipe].slave->text().toInt(), FCT_RAZ_TEMP_ADJ, 2, MD_FLOAT, MD_WRITE, FUNC_WRITE_FLOAT, fctAdjTemp + tempDiff, 0, false);
-   			//sendCalibrationRequest(FLOAT_W, LOOP.serialModbus, FUNC_WRITE_FLOAT, FCT_RAZ_TEMP_ADJ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType, );
+   				temp = read_request(FUNC_READ_FLOAT, RAZ_ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
+				delay();
 
-			//lockFCT(pipe, LOCK);
-			//delay(SLEEP_TIME);
+			}
+
+			/// display final temp
+			PIPE[pipe].temp->setText(QString::number(temp));
 		}
 	}
-}
-
-void
-MainWindow::
-sendRequest(const int slaveID, const int addr, const int num, const int data_type, const int rw, const int func, const double f_val, const int i_val, const bool c_val = false)
-{
-	ui->slaveID->setValue(slaveID);									 // slave id
-    ui->startAddr->setValue(addr);                  			 	 // address
-    ui->numCoils->setValue(num);                    				 // bytes
-
-    if (data_type == MD_FLOAT) ui->radioButton_181->setChecked(true);// float type
-	else if (data_type == MD_INT)ui->radioButton_182->setChecked(true); // integer type
-	else ui->radioButton_183->setChecked(true);						 // coil type
-
-    if (rw == MD_WRITE) ui->radioButton_186->setChecked(true);       // write 
-    else ui->radioButton_187->setChecked(true);          			 // read 
-
-    if (rw == MD_WRITE)												 // function code
-	{
-		if (data_type == MD_FLOAT) ui->functionCode->setCurrentIndex(7);
-		else if (data_type == MD_INT) ui->functionCode->setCurrentIndex(5);
-		else ui->functionCode->setCurrentIndex(4);
-	}
-	else
-	{
-		if (data_type == MD_FLOAT) ui->functionCode->setCurrentIndex(3);
-		else if (data_type == MD_INT) ui->functionCode->setCurrentIndex(3);
-		else ui->functionCode->setCurrentIndex(0);
-	}
-
- 	ui->lineEdit_109->setText(QString::number(f_val));				 // set float value
- 	ui->lineEdit_111->setText(QString::number(i_val));				 // set integer value	
-    if (c_val) ui->radioButton_184->setChecked(true);          		 // set coil true 
-    else ui->radioButton_185->setChecked(true);          			 // set coil false
-
-    onSendButtonPress();
-    delay();
+			
+	updateCurrentStage(RED,"S T O P");
 }
 
 void
@@ -1927,7 +1893,6 @@ void
 MainWindow::
 loadFile(QString fileName)
 {
-	int line = 0;
 	QFile file(fileName);
 
     if (!file.open(QIODevice::ReadOnly)) return;
@@ -1939,15 +1904,12 @@ loadFile(QString fileName)
 
     while (!str.atEnd()) {
 
-        QString s = str.readLine();
-        if (s.size() == 0)
-        {
-            file.close();
-            break;
-        }
-        else {
-            line++;
-        }
+        QString s = "";
+		while (s.size() == 0) 
+		{
+			s = str.readLine();
+			if (str.atEnd()) break;
+		}
 
         QStringList valueList = s.split(',');
 
@@ -2016,8 +1978,6 @@ void
 MainWindow::
 loadCsvFile()
 {
-    int line = 0;
-
     QString fileName = QFileDialog::getOpenFileName( this, tr("Open CSV file"), QDir::currentPath(), tr("CSV files (*.csv)") );
 	loadFile(fileName);
 }
@@ -2092,14 +2052,203 @@ onDownloadButtonChecked(bool isChecked)
 
 void
 MainWindow::
+onUploadEquation()
+{
+	if (ui->lineEdit_32->text().isEmpty()) 
+	{
+       	informUser("SLAVE ID MISSING","No Slave ID                ","No Valid Slave ID Exists!");
+		return;
+	}
+
+   	uint8_t dest[1024];
+   	uint16_t * dest16 = (uint16_t *) dest;
+   	int ret = -1;
+   	bool is16Bit = false;
+   	bool writeAccess = false;
+
+	int value = 0;
+    int rangeMax = 0;
+    QMessageBox msgBox;
+    isModbusTransmissionFailed = false;
+
+   	/// set slave
+   	memset( dest, 0, 1024 );
+   	modbus_set_slave( LOOP.serialModbus, ui->lineEdit_32->text().toInt());
+
+	/// read pipe serial number
+   	int sn = read_request(FUNC_READ_INT, RAZ_ID_SN_PIPE, BYTE_READ_INT, ret, dest, dest16, is16Bit);
+	delay();
+
+	if (QString::number(sn) != ui->lineEdit_32->text())
+    {
+   		informUser("Invalid Serial Number","Invalid Serial Number",ui->lineEdit_32->text());
+        return;
+    }
+
+    /// get rangeMax of progressDialog
+    for (int i = 0; i < ui->tableWidget->rowCount(); i++) rangeMax+=ui->tableWidget->item(i,6)->text().toInt();
+
+    QProgressDialog progress("Uploading...", "Abort", 0, rangeMax, this);
+    progress.setWindowModality(Qt::WindowModal);
+    progress.setAutoClose(true);
+    progress.setAutoReset(true);
+
+	/// unlcok FCT
+	write_request(FUNC_WRITE_COIL, 999, 0, 0, true);
+    delay();
+
+    if (isModbusTransmissionFailed)
+    {
+        isModbusTransmissionFailed = false;
+        msgBox.setText("Modbus Transmission Failed.");
+        msgBox.setInformativeText("Do you want to continue with next item?");
+        msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::No);
+        int ret = msgBox.exec();
+        switch (ret) {
+            case QMessageBox::Yes:
+                break;
+            case QMessageBox::No:
+            default: return;
+        }
+    }
+
+   for (int i = 0; i < ui->tableWidget->rowCount(); i++)
+   {
+        int regAddr = ui->tableWidget->item(i,2)->text().toInt();
+        if (ui->tableWidget->item(i,3)->text().contains("float"))
+        {
+            for (int x=0; x < ui->tableWidget->item(i,6)->text().toInt(); x++)
+            {
+                QString val = ui->tableWidget->item(i,7+x)->text(); // read value
+                if (progress.wasCanceled()) return;
+                if (ui->tableWidget->item(i,6)->text().toInt() > 1) progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"["+QString::number(x+1)+"]"+"\""+","+" \""+val+"\"");
+                else progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"\""+","+" \""+val+"\"");
+                progress.setValue(value++);
+
+				/// send modbus request
+				write_request(FUNC_WRITE_FLOAT, regAddr, val.toInt(), 0, true);
+                delay();
+                regAddr += 2; // update reg address
+
+                if (isModbusTransmissionFailed)
+                {
+                    isModbusTransmissionFailed = false;
+                    if (ui->tableWidget->item(i,6)->text().toInt() > 1) msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text()+"["+QString::number(x+1)+"]");
+                    else msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text());
+                    msgBox.setInformativeText("Do you want to continue with next item?");
+                    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+                    msgBox.setDefaultButton(QMessageBox::No);
+                    int ret = msgBox.exec();
+                    switch (ret) {
+                        case QMessageBox::Yes: break;
+                        case QMessageBox::No:
+                        default: return;
+                    }
+                }
+            }
+        }
+        else if (ui->tableWidget->item(i,3)->text().contains("int"))
+        {
+            QString val = ui->tableWidget->item(i,7)->text(); // read value
+
+            if (progress.wasCanceled()) return;
+            progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"\""+","+" \""+val+"\"");
+            progress.setValue(value++);
+
+			/// send modbus request
+			write_request(FUNC_WRITE_INT, regAddr, 0, val.toInt(), true);
+            delay();
+
+            if (isModbusTransmissionFailed)
+            {
+                isModbusTransmissionFailed = false;
+                msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text());
+                msgBox.setInformativeText("Do you want to continue with next item?");
+                msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+                msgBox.setDefaultButton(QMessageBox::No);
+                int ret = msgBox.exec();
+                switch (ret) {
+                    case QMessageBox::Yes: break;
+                    case QMessageBox::No:
+                    default: return;
+                }
+            }
+        }
+        else
+        {
+			bool val;
+			(ui->tableWidget->item(i,7)->text().toInt()) ? val = true : val = false; // read value
+
+            progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"\""+","+"\""+val+"\"");
+            //if (val) progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"\""+","+"\""+val+"\"");
+            //else progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"\""+","+" \"0\"");
+
+            if (progress.wasCanceled()) return;
+            progress.setValue(value++);
+
+			/// send modbus request
+			write_request(FUNC_WRITE_COIL, regAddr, 0, 0, val);
+            delay();
+
+            if (isModbusTransmissionFailed)
+            {
+                isModbusTransmissionFailed = false;
+                msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text());
+                msgBox.setInformativeText("Do you want to continue with next item?");
+                msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+                msgBox.setDefaultButton(QMessageBox::No);
+                int ret = msgBox.exec();
+                switch (ret) {
+                    case QMessageBox::Yes: break;
+                    case QMessageBox::No:
+                    default: return;
+                }
+            }
+        }
+    }
+
+	write_request(FUNC_WRITE_COIL, 999, 0, 0, true); // COIL_UNLOCKED_FACTORY_DEFAULT 
+	delay();
+	write_request(FUNC_WRITE_COIL, 9999, 0, 0, true); // COIL_UPDATE_FACTORY_DEFAULT 
+	delay();
+}
+
+
+void
+MainWindow::
 onDownloadEquation()
 {
+	if (ui->lineEdit_32->text().isEmpty()) 
+	{
+       	informUser("SLAVE ID MISSING","No Slave ID                ","No Valid Slave ID Exists!");
+		return;
+	}
+
+   	uint8_t dest[1024];
+   	uint16_t * dest16 = (uint16_t *) dest;
+   	int ret = -1;
+   	bool is16Bit = false;
+   	bool writeAccess = false;
     int value = 0;
     int rangeMax = 0;
 
-    ui->slaveID->setValue(1);                           // set slave ID
-    ui->radioButton_187->setChecked(true);              // read mode
-    ui->startEquationBtn->setEnabled(false);
+    QMessageBox msgBox;
+    isModbusTransmissionFailed = false;
+
+   	/// set slave
+   	memset( dest, 0, 1024 );
+   	modbus_set_slave( LOOP.serialModbus, ui->lineEdit_32->text().toInt());
+
+	/// read pipe serial number
+   	int sn = read_request(FUNC_READ_INT, RAZ_ID_SN_PIPE, BYTE_READ_INT, ret, dest, dest16, is16Bit);
+	delay();
+
+	if (QString::number(sn) != ui->lineEdit_32->text())
+    {
+   		informUser("Invalid Serial Number","Invalid Serial Number",ui->lineEdit_32->text());
+        return;
+    }
 
     // load empty equation file
     loadCsvTemplate();
@@ -2118,9 +2267,6 @@ onDownloadEquation()
 
          if (ui->tableWidget->item(i,3)->text().contains("float"))
          {
-             ui->numCoils->setValue(2);                  // 2 bytes
-             ui->radioButton_181->setChecked(TRUE);      // float type
-             ui->functionCode->setCurrentIndex(3);       // function code
              for (int x=0; x < ui->tableWidget->item(i,6)->text().toInt(); x++)
              {
                 if (progress.wasCanceled()) return;
@@ -2128,11 +2274,11 @@ onDownloadEquation()
                 else progress.setLabelText("Downloading \""+ui->tableWidget->item(i,0)->text()+"\"");
                 progress.setValue(value++);
 
-                 ui->startAddr->setValue(regAddr);       // set address
-                 onSendButtonPress();                    // send
-                 delay();
-                 regAddr = regAddr+2;                    // update reg address
-                 ui->tableWidget->setItem( i, x+7, new QTableWidgetItem(ui->lineEdit_109->text()));
+   				double val = read_request(FUNC_READ_FLOAT, regAddr, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
+                delay();
+
+                regAddr += 2; // update reg address
+                ui->tableWidget->setItem( i, x+7, new QTableWidgetItem(QString("%1").arg(val,10,'f',4,' ')));
              }
          }
          else if (ui->tableWidget->item(i,3)->text().contains("int"))
@@ -2141,13 +2287,9 @@ onDownloadEquation()
             progress.setLabelText("Downloading \""+ui->tableWidget->item(i,0)->text()+"\"");
             progress.setValue(value++);
 
-             ui->numCoils->setValue(1);                  // 1 byte
-             ui->radioButton_182->setChecked(TRUE);      // int type
-             ui->functionCode->setCurrentIndex(3);       // function code
-             ui->startAddr->setValue(regAddr);           // address
-             onSendButtonPress();                        // send
-             delay();
-             ui->tableWidget->setItem( i, 7, new QTableWidgetItem(ui->lineEdit_111->text()));
+   			int val = read_request(FUNC_READ_INT, regAddr, BYTE_READ_INT, ret, dest, dest16, is16Bit);
+            delay();
+            ui->tableWidget->setItem( i, 7, new QTableWidgetItem(QString::number(val)));
          }
          else
          {
@@ -2155,12 +2297,9 @@ onDownloadEquation()
             progress.setLabelText("Downloading \""+ui->tableWidget->item(i,0)->text()+"\"");
             progress.setValue(value++);
 
-             ui->numCoils->setValue(1);                  // 1 byte
-             ui->radioButton_183->setChecked(TRUE);      // coil type
-             ui->functionCode->setCurrentIndex(0);       // function code
-             ui->startAddr->setValue(regAddr);           // address
-             onSendButtonPress();                        // send
-             delay();
+			bool val = read_request(FUNC_READ_COIL, regAddr, BYTE_READ_COIL, ret, dest, dest16, is16Bit);
+            delay();
+            ui->tableWidget->setItem( i, 7, new QTableWidgetItem(QString::number(val)));
          }
      }
 }
@@ -2198,273 +2337,6 @@ isUserInputYes(const QString t1, const QString t2)
     }
 }
 
-
-void
-MainWindow::
-onUploadEquation()
-{
-    int value = 0;
-    int rangeMax = 0;
-    bool isReinit = false;
-    QMessageBox msgBox;
-    isModbusTransmissionFailed = false;
-
-    /// get rangeMax of progressDialog
-    for (int i = 0; i < ui->tableWidget->rowCount(); i++) rangeMax+=ui->tableWidget->item(i,6)->text().toInt();
-
-    msgBox.setText("You can reinitialize existing registers and coils.");
-    msgBox.setInformativeText("Do you want to reinitialize registers and coils?");
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
-    msgBox.setDefaultButton(QMessageBox::Cancel);
-    int ret = msgBox.exec();
-    switch (ret) {
-        case QMessageBox::Yes:
-            isReinit = true;
-            break;
-        case QMessageBox::No:
-            isReinit = false;
-            break;
-        case QMessageBox::Cancel:
-        default: return;
-    }
-
-    ui->slaveID->setValue(1);                           // set slave ID
-    ui->radioButton_186->setChecked(true);              // write mode
-
-    QProgressDialog progress("Uploading...", "Abort", 0, rangeMax, this);
-    progress.setWindowModality(Qt::WindowModal);
-    progress.setAutoClose(true);
-    progress.setAutoReset(true);
-
-    /// unlock fct default regs & coils (999)
-    ui->numCoils->setValue(1);                      // 1 byte
-    ui->radioButton_183->setChecked(TRUE);          // coil type
-    ui->functionCode->setCurrentIndex(4);           // function type
-    ui->startAddr->setValue(999);                   // address
-    ui->radioButton_184->setChecked(true);          // set value
-    if (progress.wasCanceled()) return;
-    progress.setValue(0);
-    progress.setLabelText("Unlocking factory registers....");
-    onSendButtonPress();
-    delay();
-    if (isModbusTransmissionFailed)
-    {
-        isModbusTransmissionFailed = false;
-        msgBox.setText("Modbus Transmission Failed.");
-        msgBox.setInformativeText("Do you want to continue with next item?");
-        msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-        msgBox.setDefaultButton(QMessageBox::No);
-        int ret = msgBox.exec();
-        switch (ret) {
-            case QMessageBox::Yes:
-                break;
-            case QMessageBox::No:
-            default: return;
-        }
-
-    }
-
-    if (isReinit)
-    {
-        ui->numCoils->setValue(1);                      // set byte count 1
-        ui->radioButton_183->setChecked(TRUE);          // set type coil
-        ui->functionCode->setCurrentIndex(4);           // set function type
-        ui->radioButton_185->setChecked(true);          // set coils unlocked
-
-        ui->startAddr->setValue(25);                    // set address 25
-        if (progress.wasCanceled()) return;
-        progress.setLabelText("Reinitializing registers....");
-        progress.setValue(0);
-        onSendButtonPress();
-        delay();
-        if (isModbusTransmissionFailed)
-        {
-            isModbusTransmissionFailed = false;
-            msgBox.setText("Modbus Transmission Failed.");
-            msgBox.setInformativeText("Do you want to continue with next item?");
-            msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-            msgBox.setDefaultButton(QMessageBox::No);
-            int ret = msgBox.exec();
-            switch (ret) {
-                case QMessageBox::Yes: break;
-                case QMessageBox::No:
-                default: return;
-            }
-
-        }
-        ui->startAddr->setValue(26);                    // set address 26
-        if (progress.wasCanceled()) return;
-        progress.setValue(0);
-        onSendButtonPress();
-        delay(8);                                       // need extra time to restart
-        if (isModbusTransmissionFailed)
-        {
-            isModbusTransmissionFailed = false;
-            msgBox.setText("Modbus Transmission Failed.");
-            msgBox.setInformativeText("Do you want to continue with next item?");
-            msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-            msgBox.setDefaultButton(QMessageBox::No);
-            int ret = msgBox.exec();
-            switch (ret) {
-                case QMessageBox::Yes: break;
-                case QMessageBox::No:
-                default: return;
-            }
-
-        }
-        /// unlock fct default regs & coils (999)
-        ui->numCoils->setValue(1);                      // 1 byte
-        ui->radioButton_183->setChecked(TRUE);          // coil type
-        ui->functionCode->setCurrentIndex(4);           // function type
-        ui->startAddr->setValue(999);                   // address
-        ui->radioButton_184->setChecked(true);          // set value
-        if (progress.wasCanceled()) return;
-        progress.setValue(0);
-        progress.setLabelText("Unlocking factory registers....");
-        onSendButtonPress();
-        delay();
-        if (isModbusTransmissionFailed)
-        {
-            isModbusTransmissionFailed = false;
-            msgBox.setText("Modbus Transmission Failed.");
-            msgBox.setInformativeText("Do you want to continue with next item?");
-            msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-            msgBox.setDefaultButton(QMessageBox::No);
-            int ret = msgBox.exec();
-            switch (ret) {
-                case QMessageBox::Yes: break;
-                case QMessageBox::No:
-                default: return;
-            }
-        }
-   }
-
-   for (int i = 0; i < ui->tableWidget->rowCount(); i++)
-   {
-        int regAddr = ui->tableWidget->item(i,2)->text().toInt();
-        if (ui->tableWidget->item(i,3)->text().contains("float"))
-        {
-            ui->numCoils->setValue(2);                  // 2 bytes
-            ui->radioButton_181->setChecked(TRUE);      // float type
-            ui->functionCode->setCurrentIndex(7);       // function code
-            for (int x=0; x < ui->tableWidget->item(i,6)->text().toInt(); x++)
-            {
-                QString val = ui->tableWidget->item(i,7+x)->text();
-                ui->startAddr->setValue(regAddr);       // set address
-                ui->lineEdit_109->setText(val);         // set value
-                if (progress.wasCanceled()) return;
-                if (ui->tableWidget->item(i,6)->text().toInt() > 1) progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"["+QString::number(x+1)+"]"+"\""+","+" \""+val+"\"");
-                else progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"\""+","+" \""+val+"\"");
-                progress.setValue(value++);
-                onSendButtonPress();                    // send
-                regAddr += 2;                           // update reg address
-                delay();
-                if (isModbusTransmissionFailed)
-                {
-                    isModbusTransmissionFailed = false;
-                    if (ui->tableWidget->item(i,6)->text().toInt() > 1) msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text()+"["+QString::number(x+1)+"]");
-                    else msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text());
-                    msgBox.setInformativeText("Do you want to continue with next item?");
-                    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-                    msgBox.setDefaultButton(QMessageBox::No);
-                    int ret = msgBox.exec();
-                    switch (ret) {
-                        case QMessageBox::Yes: break;
-                        case QMessageBox::No:
-                        default: return;
-                    }
-                }
-            }
-        }
-        else if (ui->tableWidget->item(i,3)->text().contains("int"))
-        {
-            QString val = ui->tableWidget->item(i,7)->text();
-            ui->numCoils->setValue(1);                  // 1 byte
-            ui->radioButton_182->setChecked(TRUE);      // int type
-            ui->functionCode->setCurrentIndex(5);       // function code
-            ui->lineEdit_111->setText(val);             // set value
-            ui->startAddr->setValue(regAddr);           // address
-            if (progress.wasCanceled()) return;
-            progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"\""+","+" \""+val+"\"");
-            progress.setValue(value++);
-            onSendButtonPress();                        // send
-            delay();
-            if (isModbusTransmissionFailed)
-            {
-                isModbusTransmissionFailed = false;
-                msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text());
-                msgBox.setInformativeText("Do you want to continue with next item?");
-                msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-                msgBox.setDefaultButton(QMessageBox::No);
-                int ret = msgBox.exec();
-                switch (ret) {
-                    case QMessageBox::Yes: break;
-                    case QMessageBox::No:
-                    default: return;
-                }
-            }
-        }
-        else
-        {
-            ui->numCoils->setValue(1);                  // 1 byte
-            ui->radioButton_183->setChecked(TRUE);      // coil type
-            ui->functionCode->setCurrentIndex(4);       // function code
-            ui->startAddr->setValue(regAddr);           // address
-            if (ui->tableWidget->item(i,7)->text().toInt() == 1)
-            {
-                ui->radioButton_184->setChecked(true);  // TRUE
-                progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"\""+","+" \"1\"");
-            }
-            else
-            {
-                ui->radioButton_185->setChecked(true);  // FALSE
-                progress.setLabelText("Uploading \""+ui->tableWidget->item(i,0)->text()+"\""+","+" \"0\"");
-            }
-            if (progress.wasCanceled()) return;
-            progress.setValue(value++);
-            onSendButtonPress();                        // send
-            delay();
-            if (isModbusTransmissionFailed)
-            {
-                isModbusTransmissionFailed = false;
-                msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text());
-                msgBox.setInformativeText("Do you want to continue with next item?");
-                msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-                msgBox.setDefaultButton(QMessageBox::No);
-                int ret = msgBox.exec();
-                switch (ret) {
-                    case QMessageBox::Yes: break;
-                    case QMessageBox::No:
-                    default: return;
-                }
-            }
-        }
-    }
-
-    /// update factory default values
-    ui->numCoils->setValue(1);                      // 1 byte
-    ui->radioButton_183->setChecked(TRUE);          // coil type
-    ui->functionCode->setCurrentIndex(4);           // function code
-    ui->radioButton_184->setChecked(true);          // set value
-
-    /// unlock factory default registers
-    ui->startAddr->setValue(999);                   // address 999
-    onSendButtonPress();
-    delay();
-
-    /// update factory default registers
-    ui->startAddr->setValue(9999);                  // address 99999
-    onSendButtonPress();
-    delay();
-}
-
-void
-MainWindow::
-lockFCT(const int pipe, const int value)
-{
-	ui->slaveID->setValue(PIPE[pipe].slave->text().toInt());
-	(value) ? onUnlockFactoryDefault() : onLockFactoryDefault();
-}
 
 void
 MainWindow::
@@ -3031,7 +2903,7 @@ validateSerialNumber(modbus_t * serialModbus)
             modbus_set_slave( serialModbus, PIPE[pipe].slave->text().toInt());
 
             /// read pipe serial number
-            sendCalibrationRequest(FLOAT_R, serialModbus, FUNC_READ_INT, LOOP.ID_SN_PIPE, BYTE_READ_INT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+            read_request(FUNC_READ_INT, LOOP.ID_SN_PIPE, BYTE_READ_INT, ret, dest, dest16, is16Bit);
 
             /// verify if serial number matches with pipe
             if (*dest16 != PIPE[pipe].slave->text().toInt())
@@ -3313,31 +3185,31 @@ readPipe(const int pipe, const bool checkStability)
     modbus_set_slave( LOOP.serialModbus, PIPE[pipe].slave->text().toInt() );
 
     /// watercut
-    if (LOOP.runMode == SIMULATION_RUN) PIPE[pipe].watercut = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_WATERCUT, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    if (LOOP.runMode == SIMULATION_RUN) PIPE[pipe].watercut = read_request(FUNC_READ_FLOAT, LOOP.ID_WATERCUT, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     delay(SLEEP_TIME);
 
     /// temperature
-    val = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    val = read_request(FUNC_READ_FLOAT, LOOP.ID_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     if ((val<100) && (val>-100)) PIPE[pipe].temperature = val;
     delay(SLEEP_TIME);
 
     /// get frequency
-    val = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    val = read_request(FUNC_READ_FLOAT, LOOP.ID_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     if ((val<1000) && (val>0)) PIPE[pipe].frequency = val;
     delay(SLEEP_TIME);
 
     /// get oil_rp
-    val = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_OIL_RP, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    val = read_request(FUNC_READ_FLOAT, LOOP.ID_OIL_RP, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     if ((val<100) && (val>0)) PIPE[pipe].oilrp = val;
     delay(SLEEP_TIME);
 
     /// get measured ai
-    val = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, RAZ_MEAS_AI, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    val = read_request(FUNC_READ_FLOAT, RAZ_MEAS_AI, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     if ((val<100) && (val>-100)) PIPE[pipe].measai = val;
     delay(SLEEP_TIME);
 
     /// get trimmed ai
-    val = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, RAZ_TRIM_AI, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    val = read_request(FUNC_READ_FLOAT, RAZ_TRIM_AI, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     if ((val<100) && (val>-100)) PIPE[pipe].trimai = val;
     delay(SLEEP_TIME);
 
@@ -3383,35 +3255,35 @@ readMasterPipe()
     modbus_set_slave( LOOP.serialModbus, CONTROLBOX_SLAVE);
 
     /// watercut
-    LOOP.masterWatercut = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_WATERCUT, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    LOOP.masterWatercut = read_request(FUNC_READ_FLOAT, LOOP.ID_MASTER_WATERCUT, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     delay(SLEEP_TIME);
 
     /// salinity
-    LOOP.masterSalinity = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_SALINITY, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    LOOP.masterSalinity = read_request(FUNC_READ_FLOAT, LOOP.ID_MASTER_SALINITY, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     delay(SLEEP_TIME);
 
     /// oil adjust
-    LOOP.masterOilAdj = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_OIL_ADJUST, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    LOOP.masterOilAdj = read_request(FUNC_READ_FLOAT, LOOP.ID_MASTER_OIL_ADJUST, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     delay(SLEEP_TIME);
 
     /// oil rp
-    LOOP.masterOilRp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_OIL_RP, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    LOOP.masterOilRp = read_request(FUNC_READ_FLOAT, LOOP.ID_MASTER_OIL_RP, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     delay(SLEEP_TIME);
 
     /// temp
-    LOOP.masterTemp = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    LOOP.masterTemp = read_request(FUNC_READ_FLOAT, LOOP.ID_MASTER_TEMPERATURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     delay(SLEEP_TIME);
 
     /// freq
-    LOOP.masterFreq = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    LOOP.masterFreq = read_request(FUNC_READ_FLOAT, LOOP.ID_MASTER_FREQ, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     delay(SLEEP_TIME);
 
     /// phase
-    LOOP.masterPhase = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_PHASE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    LOOP.masterPhase = read_request(FUNC_READ_FLOAT, LOOP.ID_MASTER_PHASE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     delay(SLEEP_TIME);
 
 	/// pressure 
-    LOOP.masterPressure = sendCalibrationRequest(FLOAT_R, LOOP.serialModbus, FUNC_READ_FLOAT, LOOP.ID_MASTER_PRESSURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit, writeAccess, funcType);
+    LOOP.masterPressure = read_request(FUNC_READ_FLOAT, LOOP.ID_MASTER_PRESSURE, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
     delay(SLEEP_TIME);
 
     /// update master pipe display
