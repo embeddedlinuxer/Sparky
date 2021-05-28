@@ -401,18 +401,8 @@ public:
 
     void delay(int);
     modbus_t*  modbus() { return LOOP.serialModbus; }
-    modbus_t*  modbus_2() { return LOOP.serialModbus; }
-    modbus_t*  modbus_3() { return LOOP.serialModbus; }
-    modbus_t*  modbus_4() { return LOOP.serialModbus; }
-    modbus_t*  modbus_5() { return LOOP.serialModbus; }
-    modbus_t*  modbus_6() { return LOOP.serialModbus; }
 
     int setupModbusPort();
-    int setupModbusPort_2();
-    int setupModbusPort_3();
-    int setupModbusPort_4();
-    int setupModbusPort_5();
-    int setupModbusPort_6();
 
 	double read_request(int, int, int, int, uint8_t *, uint16_t *, bool);
 	void write_request(int, int, double, int, bool);

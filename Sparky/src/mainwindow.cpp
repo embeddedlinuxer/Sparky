@@ -1499,7 +1499,6 @@ write_request(int func, int address, double dval, int ival, bool bval)
     }
 }
 
-
 double
 MainWindow::
 read_request(int func, int address, int num, int ret, uint8_t * dest, uint16_t * dest16, bool is16Bit)
@@ -1541,31 +1540,25 @@ read_request(int func, int address, int num, int ret, uint8_t * dest, uint16_t *
                 qs_tmp.sprintf("%04x", data);
                 qs_output.append(qs_tmp);
 
-                if (func == FUNC_READ_INT)
-                {
-                    return data;
-                }
-                else if (func == FUNC_READ_COIL)
-                {
-                    return (data) ? 1 : 0;
-                }
+                if (func == FUNC_READ_INT) return data;
+                else if (func == FUNC_READ_COIL) return (data) ? 1 : 0;
             }
 
             if (func == FUNC_READ_FLOAT)
             {
                 QByteArray array = QByteArray::fromHex(qs_output.toLatin1());
                 d = toFloat(array);
-                QString dv = QString::number(d,'f',10);
-                return dv.toDouble();
+                return (double) d;
             }
         }
     }
     else
     {
         isModbusTransmissionFailed = true;
+		//informUser("MODBUS Failed","Modbus Transmission Failed" ,QString("Address: ").append(QString::number(address)));
+		return 0;
     }
 }
-
 
 void
 MainWindow::
@@ -2263,46 +2256,106 @@ onDownloadEquation()
 
     for (int i = 0; i < ui->tableWidget->rowCount(); i++)
     {
-         int regAddr = ui->tableWidget->item(i,2)->text().toInt();
+		int regAddr = ui->tableWidget->item(i,2)->text().toInt();
+		is16Bit = false;
 
-         if (ui->tableWidget->item(i,3)->text().contains("float"))
-         {
-             for (int x=0; x < ui->tableWidget->item(i,6)->text().toInt(); x++)
-             {
+        if (ui->tableWidget->item(i,3)->text().contains("float"))
+        {
+            for (int x=0; x < ui->tableWidget->item(i,6)->text().toInt(); x++)
+            {
+				is16Bit = true;
                 if (progress.wasCanceled()) return;
                 if (ui->tableWidget->item(i,6)->text().toInt() > 1) progress.setLabelText("Downloading \""+ui->tableWidget->item(i,0)->text()+"\" "+QString::number(x+1));
                 else progress.setLabelText("Downloading \""+ui->tableWidget->item(i,0)->text()+"\"");
                 progress.setValue(value++);
-
-   				double val = read_request(FUNC_READ_FLOAT, regAddr, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
+  				double val = read_request(FUNC_READ_FLOAT, regAddr, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
                 delay();
-
-                regAddr += 2; // update reg address
-                ui->tableWidget->setItem( i, x+7, new QTableWidgetItem(QString("%1").arg(val,10,'f',4,' ')));
-             }
-         }
-         else if (ui->tableWidget->item(i,3)->text().contains("int"))
-         {
+				if (isModbusTransmissionFailed)
+                {
+                    isModbusTransmissionFailed = false;
+                    if (ui->tableWidget->item(i,6)->text().toInt() > 1) msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text()+"["+QString::number(x+1)+"]");
+                    else msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text());
+                    msgBox.setInformativeText("Do you want to read again?");
+                    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+                    msgBox.setDefaultButton(QMessageBox::No);
+                    int ret = msgBox.exec();
+                    switch (ret) {
+                        case QMessageBox::Yes: 
+							x--;
+							break;
+                        case QMessageBox::No:
+                        default: return;
+                    }
+                }
+				else
+				{
+					ui->tableWidget->item(i, x+7)->setText(QString("%1").arg(val,10,'f',4,' '));
+            		regAddr += 2; // update reg address
+				}
+            }
+        }
+        else if (ui->tableWidget->item(i,3)->text().contains("int") || ui->tableWidget->item(i,3)->text().contains("long") )
+        {
             if (progress.wasCanceled()) return;
             progress.setLabelText("Downloading \""+ui->tableWidget->item(i,0)->text()+"\"");
             progress.setValue(value++);
 
-   			int val = read_request(FUNC_READ_INT, regAddr, BYTE_READ_INT, ret, dest, dest16, is16Bit);
+			int val; 
+			if (ui->tableWidget->item(i,3)->text().contains("int")) val = read_request(FUNC_READ_INT, regAddr, BYTE_READ_INT, ret, dest, dest16, is16Bit);
+			else val = read_request(FUNC_READ_INT, regAddr, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
             delay();
-            ui->tableWidget->setItem( i, 7, new QTableWidgetItem(QString::number(val)));
-         }
-         else
-         {
+			while (isModbusTransmissionFailed)
+            {
+            	isModbusTransmissionFailed = false;
+                msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text());
+                msgBox.setInformativeText("Do you want to read again?");
+                msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+                msgBox.setDefaultButton(QMessageBox::No);
+                int ret = msgBox.exec();
+                switch (ret) {
+                    case QMessageBox::Yes: 
+						if (ui->tableWidget->item(i,3)->text().contains("int")) val = read_request(FUNC_READ_INT, regAddr, BYTE_READ_INT, ret, dest, dest16, is16Bit);
+						else val = read_request(FUNC_READ_INT, regAddr, BYTE_READ_FLOAT, ret, dest, dest16, is16Bit);
+            			delay();
+						break;
+                    case QMessageBox::No:
+                    default: return;
+                }
+            }
+
+			ui->tableWidget->item(i, 7)->setText(QString::number(val));
+        }
+        else
+        {
             if (progress.wasCanceled()) return;
             progress.setLabelText("Downloading \""+ui->tableWidget->item(i,0)->text()+"\"");
             progress.setValue(value++);
 
 			bool val = read_request(FUNC_READ_COIL, regAddr, BYTE_READ_COIL, ret, dest, dest16, is16Bit);
             delay();
-            ui->tableWidget->setItem( i, 7, new QTableWidgetItem(QString::number(val)));
-         }
-     }
+			while (isModbusTransmissionFailed)
+            {
+            	isModbusTransmissionFailed = false;
+                msgBox.setText("Modbus Transmission Failed: "+ui->tableWidget->item(i,0)->text());
+                msgBox.setInformativeText("Do you want to read again?");
+                msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+                msgBox.setDefaultButton(QMessageBox::No);
+                int ret = msgBox.exec();
+                switch (ret) {
+                    case QMessageBox::Yes: 
+						val = read_request(FUNC_READ_COIL, regAddr, BYTE_READ_COIL, ret, dest, dest16, is16Bit);
+            			delay();
+						break;
+                    case QMessageBox::No:
+                    default: return;
+                }
+            }
+
+			ui->tableWidget->item(i, 7)->setText(QString::number(val));
+        }
+	}
 }
+
 
 bool
 MainWindow::
