@@ -24,7 +24,7 @@
 #include "modbus-rtu.h"
 #include "modbus.h"
 
-#define RELEASE_VERSION             "0.1.1"
+#define RELEASE_VERSION             "0.1.2"
 
 #define RAZ                         0 
 #define EEA                         1 
@@ -122,15 +122,17 @@
 #define BLACK						"color: black;"
 #define BLUE						"color: blue;"
 
-
 /// LOOP.runMode
-#define TEMPRUN_MIN					1	
-#define TEMPRUN_HIGH				2	
-#define TEMPRUN_INJECTION			3	
-#define TEMPRUN_ONLY				4	
-#define INJECTION_RUN				5	
-#define SIMULATION_RUN				6	
-#define STOP_CALIBRATION			7	
+#define TEMPRUN_MIN					"TEMPRUN MIN"	
+#define TEMPRUN_HIGH				"TEMPRUN HIGH"	
+#define TEMPRUN_INJECTION			"TEMPRUN INJ"	
+#define TEMPRUN_ONLY				"TEMPRUN ONLY"	
+#define INJECT_RUN					"INJECT"	
+#define INJECT_STANDBY				"INJECT STANDBY"	
+#define SIMULATION_RUN				"SIMULATION"	
+#define STOP_CALIBRATION			"STOP"	
+#define READ_MASTERPIPE				"READ MASTER PIPE"	
+#define TEMP_IN_SYNC				"TEMP IN SYNC"	
 
 //////////////////////////
 /////// JSON KEYS ////////
@@ -191,6 +193,8 @@
 
 #define RAZ_MEAS_AI         173
 #define RAZ_TRIM_AI         175
+
+#define RESET_SERIES		-10000
 
 QT_CHARTS_USE_NAMESPACE
 
@@ -300,7 +304,6 @@ typedef struct LOOP_OBJECT
     double maxRefTemp;
     double injectionTemp;
 	int oilPhaseInjectCounter;
-	int runMode;
     int xDelay;
 	int loopNumber;
 	int maxInjectionWater;
@@ -313,6 +316,7 @@ typedef struct LOOP_OBJECT
 	double intervalBigPump;
 	double intervalSmallPump;
 	double intervalRollover;
+	QString runMode;
 	QString filExt;
 	QString calExt;
 	QString adjExt;
@@ -365,7 +369,7 @@ typedef struct LOOP_OBJECT
     QValueAxis * axisY;
     QValueAxis * axisY2;
 
-	LOOP_OBJECT() : isPause(false), isTempRunSkip(false), isInjectionOn(false), isTempRunOnly(false), isMaster(true), isCal(true), isEEA(false), isAMB(1), isMinRef(1), isMaxRef(1), isInjection(1), cut(MID), masterMin(0), masterMax(0),masterDelta(0), masterDeltaFinal(0), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), runMode(0), injectionTemp(0), oilPhaseInjectCounter(0), xDelay(0), loopNumber(0), maxInjectionWater(80), maxInjectionOil(200), portIndex(0), maxGraphDataPoint(0), yFreq(0), zTemp(0), intervalOilPump(0.25), intervalBigPump(1), intervalSmallPump(0.25), filExt(""), calExt(""), adjExt(""),rolExt(""),  simExt(".SIM"), operatorName(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), ID_PRESSURE(0), ID_MASTER_WATERCUT(11), ID_MASTER_SALINITY(21), ID_MASTER_OIL_ADJUST(23), ID_MASTER_OIL_RP(115), ID_MASTER_TEMPERATURE(15),ID_MASTER_FREQ(111),ID_MASTER_PHASE(17),ID_MASTER_PRESSURE(1005), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(0), masterSalinity(0), masterOilAdj(0), masterOilRp(0), masterFreq(0), masterTemp(0), masterPhase(1),masterPressure(1), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY2(new QValueAxis) {};
+	LOOP_OBJECT() : isPause(false), isTempRunSkip(false), isInjectionOn(false), isTempRunOnly(false), isMaster(true), isCal(true), isEEA(false), isAMB(1), isMinRef(1), isMaxRef(1), isInjection(1), cut(MID), masterMin(0), masterMax(0),masterDelta(0), masterDeltaFinal(0), watercut(0), injectionOilPumpRate(0), injectionWaterPumpRate(0), injectionSmallWaterPumpRate(0), injectionBucket(0), injectionMark(0), injectionMethod(0), pressureSensorSlope(0), minRefTemp(0), maxRefTemp(0), injectionTemp(0), oilPhaseInjectCounter(0), xDelay(0), loopNumber(0), maxInjectionWater(80), maxInjectionOil(200), portIndex(0), maxGraphDataPoint(0), yFreq(0), zTemp(0), intervalOilPump(0.25), intervalBigPump(1), intervalSmallPump(0.25), runMode(""), filExt(""), calExt(""), adjExt(""),rolExt(""),  simExt(".SIM"), operatorName(""), ID_SN_PIPE(0), ID_WATERCUT(0), ID_TEMPERATURE(0), ID_SALINITY(0), ID_OIL_ADJUST(0), ID_WATER_ADJUST(0), ID_FREQ(0), ID_OIL_RP(0), ID_PRESSURE(0), ID_MASTER_WATERCUT(11), ID_MASTER_SALINITY(21), ID_MASTER_OIL_ADJUST(23), ID_MASTER_OIL_RP(115), ID_MASTER_TEMPERATURE(15),ID_MASTER_FREQ(111),ID_MASTER_PHASE(17),ID_MASTER_PRESSURE(1005), loopVolume(new QLineEdit), saltStart(new QComboBox), saltStop(new QComboBox), oilTemp(new QComboBox), waterRunStart(new QLineEdit), waterRunStop(new QLineEdit), oilRunStart(new QLineEdit), oilRunStop(new QLineEdit), masterWatercut(0), masterSalinity(0), masterOilAdj(0), masterOilRp(0), masterFreq(0), masterTemp(0), masterPhase(1),masterPressure(1), modbus(NULL), serialModbus(NULL), chart(new QChart), chartView(new QChartView), axisX(new QValueAxis), axisY(new QValueAxis), axisY2(new QValueAxis) {};
 
 	~LOOP_OBJECT()
 	{
