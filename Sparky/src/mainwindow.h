@@ -90,10 +90,10 @@
   
 #define BLANK						"                                                 " 
 /// calibration file names
-#define HIGH                        "\\HIGHCUT\\HR"
-#define FULL                        "\\FULLCUT\\FR" 
-#define MID                         "\\MIDCUT\\MR"
-#define LOW                         "\\LOWCUT\\LR"
+#define HIGH                        "\\HIGHCUT_RAZ\\HC"
+#define FULL                        "\\FULLCUT_RAZ\\FC" 
+#define MID                         "\\MIDCUT_RAZ\\MC"
+#define LOW                         "\\LOWCUT_RAZ\\LC"
 
 /// header lines
 #define HEADER3                     "Time From  Water  Osc  Tune Tuning            Incident Reflected              Injection  Master    Master      Master      Master      Master       Master   Master Pipe";

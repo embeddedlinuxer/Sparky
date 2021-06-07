@@ -975,7 +975,7 @@
         </rect>
        </property>
        <property name="title">
-        <string>USE MASATER PIPE</string>
+        <string>USE MASTER PIPE</string>
        </property>
        <widget class="QRadioButton" name="radioButton_11">
         <property name="geometry">
@@ -2197,7 +2197,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">

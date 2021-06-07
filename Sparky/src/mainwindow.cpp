@@ -1746,7 +1746,6 @@ onActionReadMasterPipe()
 	updateCurrentStage(BLACK,READ_MASTERPIPE);
 	if (!LOOP.isCal) readMasterPipe();
 	else if (LOOP.isPause) readMasterPipe();
-	else informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),"UNABLE TO READ MASTER PIPE MANUALLY   " ,"Unable To Read Master Pipe Manually During Calibration!");
 	updateCurrentStage(RED,STOP_CALIBRATION);
 }
 
@@ -1921,22 +1920,12 @@ loadFile(QString fileName)
             ui->tableWidget->insertRow( ui->tableWidget->rowCount() );
 
             // insert columns
-            while (ui->tableWidget->columnCount() < valueList[6].toInt()+7)
-            {
-                ui->tableWidget->insertColumn(ui->tableWidget->columnCount());
-            }
+            while (ui->tableWidget->columnCount() < valueList[6].toInt()+7) ui->tableWidget->insertColumn(ui->tableWidget->columnCount());
 
-            // fill the data in the talbe cell
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 0, new QTableWidgetItem(valueList[0])); // Name
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 1, new QTableWidgetItem(valueList[1])); // Slave
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 2, new QTableWidgetItem(valueList[2])); // Address
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 3, new QTableWidgetItem(valueList[3])); // Type
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 4, new QTableWidgetItem(valueList[4])); // Scale
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 5, new QTableWidgetItem(valueList[5])); // RW
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 6, new QTableWidgetItem(valueList[6])); // Qty
-            ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, 7, new QTableWidgetItem(valueList[7])); // Value
+            // fill the cells with property values 
+			for (int j=0; j<7; j++) ui->tableWidget->setItem( ui->tableWidget->rowCount()-1, j, new QTableWidgetItem(valueList[j])); 
 
-            // fill the value list
+            // fill the cells withg actual value list
             for (int j = 0; j < valueList[6].toInt(); j++)
             {
                 QString cellData = valueList[7+j];
@@ -2310,7 +2299,7 @@ onDownloadEquation()
             progress.setLabelText("Downloading \""+ui->tableWidget->item(i,0)->text()+"\"");
             progress.setValue(value++);
 
-			int val; 
+			quint32 val; 
 
 			if (regAddr == 219)
 			{
@@ -2860,7 +2849,6 @@ createInjectionFile(const int sn, const int pipe, const QString startValue, cons
         /// OIL_INJECTION TEMP
         if (!QFileInfo(PIPE[pipe].file).exists())
         {
-            qDebug() << PIPE[pipe].file;
             QTextStream stream(&PIPE[pipe].file);
             PIPE[pipe].file.open(QIODevice::WriteOnly | QIODevice::Text);
             stream << header0 << '\n' << header1 << '\n' << header2 << '\n' << header3 << '\n' << header4 << '\n' << header5 << '\n';
@@ -3170,7 +3158,6 @@ startCalibration()
             	else if ((LOOP.runMode == INJECT_RUN) || (LOOP.runMode == SIMULATION_RUN)) runInjection();
             	else
 				{
-					updateCurrentStage(RED,LOOP.runMode);
 					onActionStop();
 					return;
 				}
@@ -3183,7 +3170,6 @@ startCalibration()
     {
         onActionStop();
         informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration cancelled!");
-		updateCurrentStage(RED,LOOP.runMode);
     }
 }
 
@@ -3605,7 +3591,6 @@ runInjection()
     static double totalInjectionVolume = 0;
     QString data_stream;
 
-    readMasterPipe(); /// read master pipe no matter what
 
     if ((LOOP.runMode == INJECT_RUN) || (LOOP.runMode == SIMULATION_RUN))
     {
@@ -4255,11 +4240,14 @@ createDataStream(const int pipe, QString & data_stream)
     if (LOOP.isMaster)
     {
         if (LOOP.runMode == SIMULATION_RUN) data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.masterWatercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterPressure,8,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(PIPE[pipe].watercut,8,'f',2,' ');
+
         else data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.masterWatercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterPressure,8,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
     }
+
     else
     {
         if (LOOP.runMode == SIMULATION_RUN) data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterPressure,8,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(PIPE[pipe].watercut,8,'f',2,' ');
+
         else data_stream = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16 %17 %18").arg(PIPE[pipe].etimer->elapsed()/1000, 9, 'g', -1, ' ').arg(LOOP.watercut,7,'f',2,' ').arg(PIPE[pipe].osc, 4, 'g', -1, ' ').arg(" INT").arg(1, 7, 'g', -1, ' ').arg(PIPE[pipe].frequency,9,'f',3,' ').arg(0,8,'f',2,' ').arg(PIPE[pipe].oilrp,9,'f',2,' ').arg(PIPE[pipe].temperature,11,'f',2,' ').arg(0,10,'f',2,' ').arg(LOOP.masterPressure,8,'f',2,' ').arg(LOOP.masterTemp, 11,'f',2,' ').arg(LOOP.masterOilAdj, 11,'f',2,' ').arg(LOOP.masterFreq, 11,'f',2,' ').arg(LOOP.masterWatercut, 11,'f',2,' ').arg(LOOP.masterOilRp, 11,'f',2,' ').arg(LOOP.masterPhase, 6,'f',1,' ').arg(0,8,'f',2,' ');
     }
 
