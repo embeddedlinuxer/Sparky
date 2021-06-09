@@ -24,7 +24,7 @@
 #include "modbus-rtu.h"
 #include "modbus.h"
 
-#define RELEASE_VERSION             "0.1.2"
+#define RELEASE_VERSION             "0.1.3"
 
 #define RAZ                         0 
 #define EEA                         1 

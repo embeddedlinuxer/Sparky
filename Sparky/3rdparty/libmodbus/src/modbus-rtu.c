@@ -120,7 +120,7 @@ static int _modbus_set_slave(modbus_t *ctx, int slave)
 /* Builds a RTU request header */
 static int _modbus_rtu_build_request_basis(modbus_t *ctx, int function, int addr, int nb, uint8_t *req)
 {
-    if (ctx->slave > 256) // DKOH : extended slaveid
+    if (ctx->slave > 255) // DKOH : extended slaveid
     {
         req[0] = 0xFA;
         req[1] = (ctx->slave>>24) & 0xFF;
@@ -132,6 +132,19 @@ static int _modbus_rtu_build_request_basis(modbus_t *ctx, int function, int addr
         req[7] = addr & 0x00ff;
         req[8] = nb >> 8;
         req[9] = nb & 0x00ff;
+
+		/*
+		bufferTX[port][0]   = 0;    // broadcast 
+        bufferTX[port][1]   = mb_cmd_pdi_force_slave_pipe;
+        p                   = (unsigned int*) &addr;
+        bufferTX[port][2]   = p[0]     & 0xFF;
+        p                   = (unsigned int*) &sernum;
+        bufferTX[port][3]   = p[0]>>24 & 0xFF;
+        bufferTX[port][4]   = p[0]>>16 & 0xFF;
+        bufferTX[port][5]   = p[0]>>8  & 0xFF;
+        bufferTX[port][6]   = p[0]     & 0xFF;
+        r                   = Transmit(port,7,1.0,num_retry);
+		*/
 
         return _MODBUS_RTU_EXTENDED_LENGTH;
     }
@@ -401,7 +414,6 @@ static int _modbus_rtu_check_integrity(modbus_t *ctx, uint8_t *msg,
     }
 
     crc_calculated = crc16(msg, msg_length - 2);
-    if (msg[0] == 0xFA) crc_calculated = crc16(msg, msg_length - (2+4));
     crc_received = (msg[msg_length - 2] << 8) | msg[msg_length - 1];
 
 	ctx->last_crc_expected = crc_calculated;
@@ -410,10 +422,10 @@ static int _modbus_rtu_check_integrity(modbus_t *ctx, uint8_t *msg,
     /* Check CRC of msg */
     if (crc_calculated == crc_received) {
         return msg_length;
-    } else {
+    }
+	else {
         if (ctx->debug) {
-            fprintf(stderr, "ERROR CRC received %0X != CRC calculated %0X\n",
-                    crc_received, crc_calculated);
+            fprintf(stderr, "ERROR CRC received %0X != CRC calculated %0X\n",crc_received, crc_calculated);
         }
 
         if (ctx->error_recovery & MODBUS_ERROR_RECOVERY_PROTOCOL) {

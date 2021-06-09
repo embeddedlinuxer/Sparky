@@ -2197,7 +2197,7 @@
        </sizepolicy>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
@@ -2673,7 +2673,7 @@
          <rect>
           <x>10</x>
           <y>120</y>
-          <width>311</width>
+          <width>341</width>
           <height>171</height>
          </rect>
         </property>
@@ -2769,9 +2769,9 @@
        <widget class="QGroupBox" name="groupBox_4">
         <property name="geometry">
          <rect>
-          <x>330</x>
+          <x>360</x>
           <y>180</y>
-          <width>381</width>
+          <width>351</width>
           <height>111</height>
          </rect>
         </property>
@@ -2815,7 +2815,7 @@
        <widget class="QGroupBox" name="groupBox_103">
         <property name="geometry">
          <rect>
-          <x>330</x>
+          <x>360</x>
           <y>120</y>
           <width>131</width>
           <height>51</height>
@@ -2847,7 +2847,7 @@
         </property>
         <property name="geometry">
          <rect>
-          <x>470</x>
+          <x>500</x>
           <y>120</y>
           <width>91</width>
           <height>51</height>
@@ -2879,9 +2879,9 @@
         </property>
         <property name="geometry">
          <rect>
-          <x>570</x>
+          <x>600</x>
           <y>120</y>
-          <width>131</width>
+          <width>101</width>
           <height>51</height>
          </rect>
         </property>
@@ -2893,25 +2893,25 @@
           <rect>
            <x>10</x>
            <y>20</y>
-           <width>51</width>
-           <height>17</height>
+           <width>41</width>
+           <height>20</height>
           </rect>
          </property>
          <property name="text">
-          <string>TRUE</string>
+          <string>1</string>
          </property>
         </widget>
         <widget class="QRadioButton" name="radioButton_185">
          <property name="geometry">
           <rect>
-           <x>70</x>
+           <x>60</x>
            <y>20</y>
-           <width>51</width>
-           <height>17</height>
+           <width>31</width>
+           <height>20</height>
           </rect>
          </property>
          <property name="text">
-          <string>FALSE</string>
+          <string>0</string>
          </property>
          <property name="checked">
           <bool>true</bool>
