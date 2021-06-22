@@ -10,10 +10,16 @@ CONFIG              = $(TOP)\install\config\config.xml
 PACKAGES            = $(TOP)\install\packages
 INSTALLERBASE       = $(INSTALL_TOP)\installerbase.exe
 OPTIONS             = --offline-only
+CP					= cp
+V_DRIVE				= /cygdrive/v/PDI_SOFTWARE/Sparky/Release/beta
+
 
 
 all: copy_executable
 	$(BINARYCREATOR) $(OPTIONS) -c $(CONFIG) -p $(PACKAGES) -t $(INSTALLERBASE) $(SETUP)
+
+v:
+	$(CP) $(SETUP) $(V_DRIVE)	
 
 copy_executable:
 	cp $(APP) $(INSTALL_DATA)

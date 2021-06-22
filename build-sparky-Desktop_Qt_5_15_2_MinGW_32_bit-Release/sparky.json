@@ -4,7 +4,7 @@
     "LOOP.IntervalBigPump": "1",
     "LOOP.IntervalOilPump": "0.25",
     "LOOP.IntervalSmallPump": "0.25",
-    "LOOP.LoopNumber": "5",
+    "LOOP.LoopNumber": "1",
     "LOOP.Mark": "0",
     "LOOP.MasterDelta": "0.15",
     "LOOP.MasterDeltaFinal": "0.15",
@@ -23,6 +23,6 @@
     "LOOP.XDelay": "10",
     "LOOP.YFreq": "1e+06",
     "LOOP.ZTemp": "0.1",
-    "LocalServer": "",
-    "MainServer": "C:/"
+    "LocalServer": "G:/",
+    "MainServer": "G:/"
 }
