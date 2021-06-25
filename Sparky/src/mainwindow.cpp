@@ -838,8 +838,19 @@ void
 MainWindow::
 updateGraph(const int pipe, const double x, const double y, const int Series)
 {
+	
 	if ((x == RESET_SERIES) && (y == RESET_SERIES))
 	{
+		if (pipe == ALL)
+		{
+			for (int i=0; i<3; i++)
+			{
+				PIPE[i].series->remove(0);
+				PIPE[i].series_2->remove(0);
+			}
+			return;
+		}
+
 		PIPE[pipe].series->remove(0);
 		PIPE[pipe].series_2->remove(0);
 		return;
@@ -1117,9 +1128,9 @@ readJsonConfigFile()
     LOOP.injectionMark = json[LOOP_MARK].toDouble();
     LOOP.injectionMethod = json[LOOP_METHOD].toDouble();
     LOOP.pressureSensorSlope = json[LOOP_PRESSURE].toDouble();
-    LOOP.minRefTemp = json[LOOP_MIN_TEMP].toInt();
-    LOOP.maxRefTemp = json[LOOP_MAX_TEMP].toInt();
-    LOOP.injectionTemp = json[LOOP_INJECTION_TEMP].toInt();
+    LOOP.minTemp = json[LOOP_MIN_TEMP].toInt();
+    LOOP.maxTemp = json[LOOP_MAX_TEMP].toInt();
+    LOOP.injectTemp = json[LOOP_INJECTION_TEMP].toInt();
     LOOP.xDelay = json[LOOP_X_DELAY].toInt();
     LOOP.yFreq = json[LOOP_Y_FREQ].toDouble();
     LOOP.zTemp = json[LOOP_Z_TEMP].toDouble();
@@ -1143,9 +1154,9 @@ readJsonConfigFile()
     ui->lineEdit_65->setText(QString::number(LOOP.maxInjectionOil));
     ui->lineEdit_66->setText(QString::number(LOOP.maxInjectionWater));
 
-    ui->lineEdit_67->setText(QString::number(LOOP.minRefTemp));
-    ui->lineEdit_68->setText (QString::number(LOOP.maxRefTemp));
-    ui->lineEdit_69->setText(QString::number(LOOP.injectionTemp));
+    ui->lineEdit_67->setText(QString::number(LOOP.minTemp));
+    ui->lineEdit_68->setText (QString::number(LOOP.maxTemp));
+    ui->lineEdit_69->setText(QString::number(LOOP.injectTemp));
 
     ui->lineEdit_72->setText(QString::number(LOOP.xDelay));
     ui->lineEdit_70->setText(QString::number(LOOP.yFreq));
@@ -1181,9 +1192,9 @@ writeJsonConfigFile(void)
     LOOP.maxInjectionOil = ui->lineEdit_65->text().toDouble();
     LOOP.maxInjectionWater = ui->lineEdit_66->text().toDouble();
 
-    LOOP.minRefTemp = ui->lineEdit_67->text().toDouble();
-    LOOP.maxRefTemp = ui->lineEdit_68->text().toDouble();
-    LOOP.injectionTemp = ui->lineEdit_69->text().toDouble();
+    LOOP.minTemp = ui->lineEdit_67->text().toDouble();
+    LOOP.maxTemp = ui->lineEdit_68->text().toDouble();
+    LOOP.injectTemp = ui->lineEdit_69->text().toDouble();
 
     LOOP.xDelay =  ui->lineEdit_72->text().toDouble();
     LOOP.yFreq = ui->lineEdit_70->text().toDouble();
@@ -1206,9 +1217,9 @@ writeJsonConfigFile(void)
     json[LOOP_MARK] = QString::number(LOOP.injectionMark);
     json[LOOP_METHOD] = QString::number(LOOP.injectionMethod);
     json[LOOP_PRESSURE] = QString::number(LOOP.pressureSensorSlope);
-    json[LOOP_MIN_TEMP] = QString::number(LOOP.minRefTemp);
-    json[LOOP_MAX_TEMP] = QString::number(LOOP.maxRefTemp);
-    json[LOOP_INJECTION_TEMP] = QString::number(LOOP.injectionTemp);
+    json[LOOP_MIN_TEMP] = QString::number(LOOP.minTemp);
+    json[LOOP_MAX_TEMP] = QString::number(LOOP.maxTemp);
+    json[LOOP_INJECTION_TEMP] = QString::number(LOOP.injectTemp);
     json[LOOP_X_DELAY] = QString::number(LOOP.xDelay);
     json[LOOP_Y_FREQ] = QString::number(LOOP.yFreq);
     json[LOOP_Z_TEMP] = QString::number(LOOP.zTemp);
@@ -1296,7 +1307,7 @@ MainWindow::
 onMinRefTemp()
 {
     bool ok;
-    LOOP.minRefTemp = QInputDialog::getInt(this,tr("Minimum Reference Temperature"),tr("Enter Minimum Reference Temperature: "), LOOP.minRefTemp, 0, 1000, 2, &ok);
+    LOOP.minTemp = QInputDialog::getInt(this,tr("Minimum Reference Temperature"),tr("Enter Minimum Reference Temperature: "), LOOP.minTemp, 0, 1000, 2, &ok);
 
     /// update json config file
     writeJsonConfigFile();
@@ -1307,7 +1318,7 @@ MainWindow::
 onMaxRefTemp()
 {
     bool ok;
-    LOOP.maxRefTemp = QInputDialog::getInt(this,tr("Maximum Reference Temperature"),tr("Enter Maximum Reference Temperature: "), LOOP.maxRefTemp, 0, 1000, 2, &ok);
+    LOOP.maxTemp = QInputDialog::getInt(this,tr("Maximum Reference Temperature"),tr("Enter Maximum Reference Temperature: "), LOOP.maxTemp, 0, 1000, 2, &ok);
 
     /// update json config file
     writeJsonConfigFile();
@@ -1318,7 +1329,7 @@ MainWindow::
 onInjectionTemp()
 {
     bool ok;
-    LOOP.injectionTemp = QInputDialog::getInt(this,tr("Injection Temperature"),tr("Enter Injection Temperature: "), LOOP.injectionTemp, 0, 1000, 2, &ok);
+    LOOP.injectTemp = QInputDialog::getInt(this,tr("Injection Temperature"),tr("Enter Injection Temperature: "), LOOP.injectTemp, 0, 1000, 2, &ok);
 
     /// update json config file
     writeJsonConfigFile();
@@ -1650,7 +1661,7 @@ void
 MainWindow::
 onActionSkip()
 {
-	if ((LOOP.runMode != TEMPRUN_MIN) && (LOOP.runMode != TEMPRUN_HIGH) && (LOOP.runMode != TEMPRUN_INJECTION)) return;
+	if ((LOOP.runMode != TEMPRUN_MIN) && (LOOP.runMode != TEMPRUN_HIGH) && (LOOP.runMode != TEMPRUN_INJECT)) return;
 	if (isUserInputYes("Will Skip Current Temp Run Stage", "Do You Want To Skip?")) LOOP.isTempRunSkip = true;
 	if (LOOP.isPause == true)
 	{
@@ -3019,9 +3030,7 @@ MainWindow::
 readLoopConfiguration()
 {
     /// reset triggers
-    LOOP.isInitTempRunStart = false;
-    LOOP.isInitTempRunHigh = false;
-    LOOP.isInitTempRunInject = false;
+    LOOP.isInitTempRun = false;
     LOOP.isInitInject = false;
     LOOP.isInjectionOn = false;
 	LOOP.isPause = false;
@@ -3074,13 +3083,24 @@ readLoopConfiguration()
     else if (ui->radioButton_5->isChecked()) 
 	{
 		LOOP.cut = MID;
-		LOOP.isInitInject = true;
+		if (LOOP.isEEA) 
+		{
+			LOOP.isInitTempRun = false;
+			LOOP.isInitInject = true;
+		}
+		else 
+		{
+			LOOP.isInitTempRun = true;
+			LOOP.isInitInject = false;
+		}
 		LOOP.isWaterRun = false;
 		LOOP.isOilRun = true;
 	}
     else if (ui->radioButton_6->isChecked()) 
 	{
 		LOOP.cut = LOW;
+		LOOP.isInitTempRun = true;
+		LOOP.isInitInject = false;
 		LOOP.isWaterRun = false;
 		LOOP.isOilRun = true;
 	}
@@ -3141,14 +3161,14 @@ bool
 MainWindow::
 prepareCalibration()
 {
-	/// disable unused pipe 
+	/// disable empty pipes
     for (int pipe=0; pipe<3; pipe++)
     {
         if (PIPE[pipe].slave->text().isEmpty()) PIPE[pipe].status = DISABLED;
         else PIPE[pipe].status = ENABLED;
     }
 
-	/// all empty
+	/// cancle calibration if pipes are all empty
     if (PIPE[0].slave->text().isEmpty() && PIPE[1].slave->text().isEmpty() && PIPE[2].slave->text().isEmpty())
     {
         onActionStop();
@@ -3169,7 +3189,7 @@ prepareCalibration()
     {
         /// update tab icon
         onActionStop();
-        informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"Bad Serial Commection");
+        informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("LOOP ")+QString::number(LOOP.loopNumber).append(BLANK),"Bad Serial Connection");
         return false;
     }
 
@@ -3244,9 +3264,8 @@ startCalibration()
                         {
                             if (!dir.exists(PIPE[pipe].mainDirPath+"_"+QString::number(fileCounter)))
                             {
-                                //PIPE[pipe].mainDirPath += "_"+QString::number(fileCounter);
-                                dir.rename(PIPE[pipe].mainDirPath,PIPE[pipe].mainDirPath + "_"+QString::number(fileCounter) ); // rename existing dir with "_?"
-                                dir.mkpath(PIPE[pipe].mainDirPath);
+                                dir.rename(PIPE[pipe].mainDirPath,PIPE[pipe].mainDirPath + "_"+QString::number(fileCounter) ); // rename existing folder"
+                                dir.mkpath(PIPE[pipe].mainDirPath); // create new folder
 
                                 break;
                             }
@@ -3258,7 +3277,7 @@ startCalibration()
                 /// set file name
 				if (LOOP.runMode == SIMULATION_RUN)
 				{
-					PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+ QString("CALIBRAT__").append(QString::number(LOOP.injectionTemp)).append(LOOP.simExt));
+					PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+ QString("CALIBRAT__").append(QString::number(LOOP.injectTemp)).append(LOOP.simExt));
 				}
 				else
 				{
@@ -3266,9 +3285,6 @@ startCalibration()
 					{
                 		if ((LOOP.cut == HIGH) || (LOOP.cut == FULL))
 						{
-							LOOP.isWaterRun = true;
-							LOOP.isOilRun = false;
-
 							/// set file name
 							PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+ QString::number(LOOP.saltStart->currentText().toDouble()*100).append("_100").append(LOOP.filExt));
 
@@ -3278,20 +3294,16 @@ startCalibration()
 						}
 						else // midcut or lowcut or razor
 						{
-							LOOP.isWaterRun = false;
-							LOOP.isOilRun = true;
-
 							/// lowcut
-							if (LOOP.cut == LOW) PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+ QString("AMB").append("_").append(QString::number(LOOP.minRefTemp)).append(LOOP.filExt));
+							if (LOOP.cut == LOW) PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+ QString("AMB").append("_").append(QString::number(LOOP.minTemp)).append(LOOP.filExt));
 
 							/// midcut
-							else PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+ QString("OIL_").append(QString::number(LOOP.injectionTemp)).append(LOOP.filExt));
+							else PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+ QString("OIL_").append(QString::number(LOOP.injectTemp)).append(LOOP.filExt));
 						}
 					}
 					else // razor
 					{
-						LOOP.isInitTempRunStart = true;
-						PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+ QString("AMB").append("_").append(QString::number(LOOP.minRefTemp)).append(LOOP.filExt));
+						PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+ QString("AMB").append("_").append(QString::number(LOOP.minTemp)).append(LOOP.filExt));
 					}
             	}
         	}
@@ -3314,7 +3326,7 @@ startCalibration()
 			{
 				updateCurrentStage(BLACK,LOOP.runMode);
 
-            	if ((LOOP.runMode == TEMPRUN_ONLY) || (LOOP.runMode == TEMPRUN_MIN) || (LOOP.runMode == TEMPRUN_HIGH) || (LOOP.runMode == TEMPRUN_INJECTION)) runTempRun();
+            	if ((LOOP.runMode == TEMPRUN_ONLY) || (LOOP.runMode == TEMPRUN_MIN) || (LOOP.runMode == TEMPRUN_HIGH) || (LOOP.runMode == TEMPRUN_INJECT)) runTempRun();
             	else if ((LOOP.runMode == INJECT_RUN) || (LOOP.runMode == SIMULATION_RUN)) runInjection();
             	else
 				{
@@ -3329,7 +3341,7 @@ startCalibration()
     else
     {
         onActionStop();
-        informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Calibration cancelled!");
+        informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),BLANK,"Calibration cancelled!");
     }
 }
 
@@ -3352,9 +3364,7 @@ stopCalibration()
     LOOP.isCal = false;
     LOOP.isMaster = false;
     LOOP.isEEA = false;
-    LOOP.isInitTempRunStart = false;
-    LOOP.isInitTempRunHigh = false;
-    LOOP.isInitTempRunInject = false;
+    LOOP.isInitTempRun = false;
     LOOP.isInitInject = false;
 	LOOP.salinityIndex = 0;
     LOOP.runMode = STOP_CALIBRATION;
@@ -3371,7 +3381,7 @@ stopCalibration()
     }
 
 	LOOP.axisY->setTitleText("Watercut (%)");
-   	for (int pipe = 0; pipe < 3; pipe++) updateGraph(pipe, RESET_SERIES, RESET_SERIES, SERIES_WATERCUT); // reset chart
+    updateGraph(ALL, RESET_SERIES, RESET_SERIES, SERIES_WATERCUT); // reset chart
 
     return;
 }
@@ -3425,7 +3435,7 @@ readPipe(const int pipe, const bool checkStability)
     /// update display
     if (PIPE[pipe].status != DISABLED)
     {
-        if ((LOOP.runMode != TEMPRUN_MIN) && (LOOP.runMode != TEMPRUN_HIGH) && (LOOP.runMode != TEMPRUN_INJECTION) && (LOOP.runMode != TEMPRUN_ONLY)) displayPipeReading(pipe, PIPE[pipe].watercut, PIPE[pipe].frequency_start, PIPE[pipe].frequency, PIPE[pipe].temperature, PIPE[pipe].oilrp);
+        if ((LOOP.runMode != TEMPRUN_MIN) && (LOOP.runMode != TEMPRUN_HIGH) && (LOOP.runMode != TEMPRUN_INJECT) && (LOOP.runMode != TEMPRUN_ONLY)) displayPipeReading(pipe, PIPE[pipe].watercut, PIPE[pipe].frequency_start, PIPE[pipe].frequency, PIPE[pipe].temperature, PIPE[pipe].oilrp);
         else displayPipeReading(pipe, LOOP.watercut, PIPE[pipe].frequency_start, PIPE[pipe].frequency, PIPE[pipe].temperature, PIPE[pipe].oilrp);
         delay(SLEEP_TIME);
     }
@@ -3497,6 +3507,7 @@ readMasterPipe()
 
     /// update master pipe display
     updateMasterPipeStatus(LOOP.masterWatercut,LOOP.masterFreq,LOOP.masterTemp,LOOP.masterPhase,LOOP.masterOilAdj,LOOP.masterSalinity);
+    delay(SLEEP_TIME);
 }
 
 
@@ -3508,238 +3519,160 @@ runTempRun()
 
     if (LOOP.isCal)
     {
-        readMasterPipe(); // read master pipe no matter what
+		/// read master pipe no matter what
+        readMasterPipe();
 
-        /// set point : minTemp
-        if (LOOP.runMode == TEMPRUN_MIN)
+		/// variable initialization 
+        if (LOOP.isInitTempRun)
         {
-            if (LOOP.isInitTempRunStart)
+            bool ok;
+        	LOOP.isInitTempRun = false;
+            updatePipeStability(ALL,NO_STABILITY_CHECK);
+
+            /// change y axis label and reset chart
+            LOOP.axisY->setTitleText("Temperature (°C)");
+
+			/// set target temperature
+        	if (LOOP.runMode == TEMPRUN_MIN) 
+			{
+				LOOP.currentTemp = "AMB";
+				LOOP.targetTemp = QString::number(LOOP.minTemp);
+	
+				/// popup questions
+			   	if (!isUserInputYes(QString("LOOP ")+QString::number(LOOP.loopNumber),"Fill The Water Container To The Mark."))
+               	{
+                   	onActionStop();
+                   	return;
+               	}
+
+               	LOOP.operatorName = QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Operator's Name.")), QLineEdit::Normal," ", &ok);
+               	LOOP.oilRunStart->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Measured Initial Watercut.")), QLineEdit::Normal,"0.0", &ok));
+               	LOOP.watercut = LOOP.oilRunStart->text().toDouble();
+
+               	/// master pipe validation
+               	if (LOOP.isMaster)
+               	{
+                   	if (LOOP.masterWatercut > LOOP.masterMax)
+                   	{
+                       	if (!isUserInputYes(QString("Master Pipe Raw watercut Value Is Greater Than ")+QString::number(LOOP.masterMax), "Do You Want To Continue?"))
+                       	{
+                           	onActionStop();
+                           	return;
+                       	}
+                   	}
+
+                   	if (LOOP.masterWatercut < LOOP.masterMin)
+                   	{
+                       	if (!isUserInputYes(QString("Master Pipe Raw watercut Value Is Less Than ")+QString::number(LOOP.masterMin), "Do You Want To Continue?"))
+                       	{
+                           	onActionStop();
+                           	return;
+                       	}
+                   	}
+                   
+					if (abs(LOOP.masterWatercut - LOOP.oilRunStart->text().toDouble()) > LOOP.masterDelta)
+                   	{
+                       	if (!isUserInputYes(QString("The difference between master watercut and measured initial watercut is greater than ")+QString::number(LOOP.masterDelta), "Do You Want To Continue?"))
+                       	{
+                           	onActionStop();
+                           	return;
+                       	}
+                   	}
+               	}
+			}
+       		else if (LOOP.runMode == TEMPRUN_HIGH)
+			{
+				LOOP.currentTemp = QString::number(LOOP.minTemp);
+				LOOP.targetTemp = QString::number(LOOP.maxTemp);
+			}
+       		else if (LOOP.runMode == TEMPRUN_INJECT) 
+			{
+				LOOP.currentTemp = QString::number(LOOP.maxTemp);
+				LOOP.targetTemp = QString::number(LOOP.injectTemp);
+			}
+			
+			/// ask op to set heat exchanger temperature
+            if (!isUserInputYes(QString("Set The Heat Exchanger Temperature"), LOOP.targetTemp.append("°C")))
             {
-                LOOP.isInitTempRunStart = false;
-                bool ok;
-                updatePipeStability(ALL,NO_STABILITY_CHECK);
+                onActionStop();
+                return;
+            }
 
-                /// set y axis title
-                LOOP.axisY->setTitleText("Temperature (°C)");
-
-                /// popup questions
-                LOOP.operatorName = QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Operator's Name.")), QLineEdit::Normal," ", &ok);
-                LOOP.oilRunStart->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Measured Initial Watercut.")), QLineEdit::Normal,"0.0", &ok));
-                LOOP.watercut = LOOP.oilRunStart->text().toDouble();
-
-                if (!isUserInputYes(QString("LOOP ")+QString::number(LOOP.loopNumber),"Fill The Water Container To The Mark."))
+            /// create files
+            for (int pipe = 0; pipe < 3; pipe++)
+            {
+                if (PIPE[pipe].status == ENABLED)
                 {
-                    onActionStop();
-                    return;
-                }
-
-                /// master pipe validation
-                if (LOOP.isMaster)
-                {
-                    if (LOOP.masterWatercut > LOOP.masterMax)
-                    {
-                        if (!isUserInputYes(QString("Master Pipe Raw watercut Value Is Greater Than ")+QString::number(LOOP.masterMax), "Do You Want To Continue?"))
-                        {
-                            onActionStop();
-                            return;
-                        }
-                    }
-                    if (LOOP.masterWatercut < LOOP.masterMin)
-                    {
-                        if (!isUserInputYes(QString("Master Pipe Raw watercut Value Is Less Than ")+QString::number(LOOP.masterMin), "Do You Want To Continue?"))
-                        {
-                            onActionStop();
-                            return;
-                        }
-                    }
-                    if (abs(LOOP.masterWatercut - LOOP.oilRunStart->text().toDouble()) > LOOP.masterDelta)
-                    {
-                        if (!isUserInputYes(QString("The difference between master watercut and measured initial watercut is greater than ")+QString::number(LOOP.masterDelta), "Do You Want To Continue?"))
-                        {
-                            onActionStop();
-                            return;
-                        }
-                    }
-                }
-
-                if (!isUserInputYes(QString("Set The Heat Exchanger Temperature"), QString::number(LOOP.minRefTemp).append("°C")))
-                {
-                    onActionStop();
-                    return;
-                }
-
-                /// create a file
-                for (int pipe = 0; pipe < 3; pipe++)
-                {
-                    if (PIPE[pipe].status == ENABLED)
-                    {
-        				updateGraph(pipe, RESET_SERIES, RESET_SERIES, SERIES_WATERCUT); // reset chart
-                        if (!QFileInfo(PIPE[pipe].file).exists()) createTempRunFile(PIPE[pipe].slave->text().toInt(), "AMB", QString::number(LOOP.minRefTemp), LOOP.saltStop->currentText(), pipe);
-                    }
+                    if (!QFileInfo(PIPE[pipe].file).exists()) createTempRunFile(PIPE[pipe].slave->text().toInt(), LOOP.currentTemp, LOOP.targetTemp, "1", pipe);
                 }
             }
 
-            /// start reading values and write to file
-            for (int pipe = 0; pipe < 3; pipe++)
-            {
-				/// skip to next temprun stage?
-				if (LOOP.isTempRunSkip)
-				{
-					if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked()) 
-					{
-						PIPE[pipe].tempStability = 5;
-						PIPE[pipe].freqStability = 5;
-					}
-				}
+			/// reset chart
+    		updateGraph(ALL, RESET_SERIES, RESET_SERIES, SERIES_WATERCUT);
 
-                /// log data 
-                if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
+		} //---- end LOOP.isInitTempRun here ---//
+
+        /// start reading values and write to file
+        for (int pipe = 0; pipe < 3; pipe++)
+        {
+			/// skip to next temprun stage?
+			if (LOOP.isTempRunSkip)
+			{
+				if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked()) 
+				{
+					PIPE[pipe].tempStability = 5;
+					PIPE[pipe].freqStability = 5;
+				}
+			}
+
+            /// if not stable yet && read pipe and update temprun file
+            if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
+            {
+            	(abs(LOOP.minTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
+                createDataStream(pipe,data_stream);
+                writeToCalFile(pipe, data_stream);
+            }
+            else /// now stable
+            {
+                if (PIPE[pipe].status == ENABLED) /// do nothing if pipe == done
                 {
-                    (abs(LOOP.minRefTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
-                    createDataStream(pipe,data_stream);
-                    writeToCalFile(pipe, data_stream);
-                }
-                else
-                {
-                    if (PIPE[pipe].status == ENABLED)
-                    {
-                        PIPE[pipe].status = DONE; /// stop reading pipe upon reaching stability
-                        setFileNameForNextStage(pipe, QString::number(LOOP.minRefTemp).append("_").append(QString::number(LOOP.maxRefTemp)).append(LOOP.filExt));
-                        if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) 
+                    PIPE[pipe].status = DONE; /// set status == done 
+                   	setFileNameForNextStage(pipe, LOOP.currentTemp.append("_").append(LOOP.targetTemp).append(LOOP.filExt));
+
+					/// all pipes are finished
+                    if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) 
+					{
+						LOOP.isInitTempRun = true;
+						LOOP.isTempRunSkip = false;
+
+						/// change mode
+						if (LOOP.runMode == TEMPRUN_MIN) LOOP.runMode = TEMPRUN_HIGH;
+						else if (LOOP.runMode == TEMPRUN_HIGH) LOOP.runMode = TEMPRUN_INJECT;
+						else // TEMPRUN_INJECT
 						{
-							LOOP.runMode = TEMPRUN_HIGH;
-                			LOOP.isInitTempRunHigh = true;
-							LOOP.isTempRunSkip = false;
-						}
-                    }
-                }
-            }
-        }
-
-        /// TEMPRUN_HIGH starts
-        else if (LOOP.runMode == TEMPRUN_HIGH)
-        {
-            if (LOOP.isInitTempRunHigh)
-            {
-                LOOP.isInitTempRunHigh = false;
-                updatePipeStability(ALL,NO_STABILITY_CHECK);
-
-                if (!isUserInputYes(QString("Set The Heat Exchanger Temperature"), QString::number(LOOP.maxRefTemp).append("°C")))
-                {
-                    onActionStop();
-                    return;
-                }
-
-                /// add a new file
-                for (int pipe = 0; pipe < 3; pipe++)
-                {
-                    if (PIPE[pipe].status == DONE)
-                    {
-                        PIPE[pipe].status = ENABLED;
-                        if (!QFileInfo(PIPE[pipe].file).exists()) createTempRunFile(PIPE[pipe].slave->text().toInt(), QString::number(LOOP.minRefTemp), QString::number(LOOP.maxRefTemp), LOOP.saltStop->currentText(), pipe);
-                    }
-                }
-            }
-
-            for (int pipe = 0; pipe < 3; pipe++)
-            {
-				/// skip to next temprun stage?
-				if (LOOP.isTempRunSkip)
-				{
-					if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked()) 
-					{
-						PIPE[pipe].tempStability = 5;
-						PIPE[pipe].freqStability = 5;
-					}
-				}
-
-                if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
-                {
-                    (abs(LOOP.maxRefTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
-                    createDataStream(pipe,data_stream);
-                    writeToCalFile(pipe, data_stream);
-                }
-                else
-                {
-                    if (PIPE[pipe].status == ENABLED)
-                    {
-                        PIPE[pipe].status = DONE;
-                        setFileNameForNextStage(pipe, QString::number(LOOP.maxRefTemp).append("_").append(QString::number(LOOP.injectionTemp)).append(LOOP.filExt));
-                        if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) 
-						{
-							LOOP.runMode = TEMPRUN_INJECTION;
-                			LOOP.isInitTempRunInject = true;
-							LOOP.isTempRunSkip = false;
-						}	
-                    }
-                }
-            }
-        }
-
-        /// TEMPRUN_INJECTION starts
-        else if (LOOP.runMode == TEMPRUN_INJECTION)
-        {
-            if (LOOP.isInitTempRunInject)
-            {
-                LOOP.isInitTempRunInject = false;
-                updatePipeStability(ALL,NO_STABILITY_CHECK);
-
-                if (!isUserInputYes(QString("Set The Heat Exchanger Temperature"), QString::number(LOOP.injectionTemp).append("°C")))
-                {
-                    onActionStop();
-                    return;
-                }
-
-                /// add a new file
-                for (int pipe = 0; pipe < 3; pipe++)
-                {
-                    if (PIPE[pipe].status == DONE)
-                    {
-                        PIPE[pipe].status = ENABLED;
-                        if (!QFileInfo(PIPE[pipe].file).exists()) createTempRunFile(PIPE[pipe].slave->text().toInt(), QString::number(LOOP.maxRefTemp), QString::number(LOOP.injectionTemp), LOOP.saltStop->currentText(), pipe);
-                    }
-                }
-            }
-
-            for (int pipe = 0; pipe < 3; pipe++)
-            {
-				/// skip to next temprun stage?
-				if (LOOP.isTempRunSkip)
-				{
-					if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked()) 
-					{
-						PIPE[pipe].tempStability = 5;
-						PIPE[pipe].freqStability = 5;
-					}
-				}
-
-                if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
-                {
-                    (abs(LOOP.injectionTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
-                    createDataStream(pipe,data_stream);
-                    writeToCalFile(pipe, data_stream);
-                }
-                else
-                {
-                    if (PIPE[pipe].status == ENABLED)
-                    {
-                        PIPE[pipe].status = DONE;
-                        if (LOOP.cut == LOW) setFileNameForNextStage(pipe,"CALIBRAT.LCI");
-                        else if (LOOP.cut == MID) setFileNameForNextStage(pipe,QString("OIL__").append(QString::number(LOOP.injectionTemp)).append(".MCI"));
-                        PIPE[pipe].frequency_start = PIPE[pipe].frequency;
-
-                        /// check condition for injection
-                        if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED))
-                        {
-							LOOP.isTempRunSkip = false;
-                            if (LOOP.isTempRunOnly) informUser("Temp Run Has Finished.", "Calibration Stopped" ); // TEMPRUN_ONLY mode
-                            else 
+							if (LOOP.isTempRunOnly) 
 							{
+								informUser("Temp Run Has Finished.", "Calibration Stopped" ); // TEMPRUN_ONLY mode
+								onActionStop();
+							}
+                        	else /// temprun is over. moving to inject_run
+							{
+								for (int pipe=0; pipe<3; pipe++)	
+								{
+                    				if (PIPE[pipe].status == DONE)
+									{
+										if (LOOP.cut == LOW) setFileNameForNextStage(pipe,"CALIBRAT.LCI");
+                        				else setFileNameForNextStage(pipe,QString("OIL__").append(LOOP.targetTemp).append(".MCI"));
+                        				PIPE[pipe].frequency_start = PIPE[pipe].frequency;
+									}
+								}
+
 								LOOP.runMode = INJECT_RUN;
 								LOOP.isInitInject = true;
+								LOOP.isInitTempRun = false;
 							}
-                        }
-                    }
+						}
+					}
                 }
             }
         }
@@ -3765,11 +3698,12 @@ runInjection()
     {
         if (LOOP.isInitInject)
         {
-            /// set y axis in chart
-            LOOP.axisY->setTitleText("Watercut (%)");
-
-			/// user notice
+ 			/// user notice
             bool ok;
+  
+         	/// chage y axis and reset series
+            LOOP.axisY->setTitleText("Watercut (%)");
+    		updateGraph(ALL, RESET_SERIES, RESET_SERIES, SERIES_WATERCUT);
 
 			if (LOOP.isWaterRun)
 			{
@@ -3796,7 +3730,7 @@ runInjection()
 
 				/* no need to ask initial watercut - 99% always */
            		LOOP.watercut = LOOP.waterRunStart->text().toDouble();
-           		LOOP.oilPhaseInjectCounter = 0;
+           		LOOP.phaseRolloverCounter = 0;
 				LOOP.isOilRun = false;
 			}
 			else if (LOOP.isOilRun)
@@ -3835,7 +3769,7 @@ runInjection()
 				/// get initial watercut
            		LOOP.oilRunStart->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber),tr(qPrintable("Enter Measured Initial Watercut")), QLineEdit::Normal,"0.0", &ok));
            		LOOP.watercut = LOOP.oilRunStart->text().toDouble();
-           		LOOP.oilPhaseInjectCounter = 0;
+           		LOOP.phaseRolloverCounter = 0;
 				LOOP.isWaterRun = false;
 			}
 
@@ -3856,12 +3790,15 @@ runInjection()
                     //delay(SLEEP_TIME);
                 }
             }
-        }
 
-        //if ((LOOP.oilRunStop->text().toDouble() >= LOOP.watercut) && (LOOP.oilPhaseInjectCounter <= MAX_PHASE_CHECKING))
-        if ((((LOOP.cut == LOW) || (LOOP.cut == MID)) && LOOP.isOilRun && (LOOP.oilRunStop->text().toDouble() >= LOOP.watercut)) || 
-         	(((LOOP.cut == FULL) || (LOOP.cut == HIGH)) && LOOP.isOilRun && (LOOP.oilRunStop->text().toDouble() >= LOOP.watercut)) || 
-			(((LOOP.cut == FULL) || (LOOP.cut == HIGH)) && LOOP.isWaterRun && (LOOP.waterRunStop->text().toDouble() < LOOP.watercut)))
+			LOOP.isInitInject = false;
+        	updateGraph(ALL, RESET_SERIES, RESET_SERIES, SERIES_WATERCUT); // reset chart
+
+        } //---- end LOOP.isInitInject ---//
+
+        // 
+        if (( LOOP.isOilRun && (LOOP.oilRunStop->text().toDouble() >= LOOP.watercut)) || 
+			( LOOP.isWaterRun && (LOOP.waterRunStop->text().toDouble() <= LOOP.watercut)))
         {
             if (!LOOP.isMaster) updateLoopStatus(LOOP.watercut, 0, injectionTime, injectionTime*LOOP.injectionWaterPumpRate/60);
 
@@ -3880,12 +3817,12 @@ runInjection()
             }
 
             /// reset LOOP.watercut and disable initialization
-            if (LOOP.isInitInject)
+            /*if (LOOP.isInitInject)
             {
                 LOOP.isInitInject = false;
                 //LOOP.watercut = 0;
-        		for (int pipe = 0; pipe < 3; pipe++) updateGraph(pipe, RESET_SERIES, RESET_SERIES, SERIES_WATERCUT); // reset chart
-            }
+        		updateGraph(ALL, RESET_SERIES, RESET_SERIES, SERIES_WATERCUT); // reset chart
+            }*/
 
             /// inject water or oil in master pipe mode
             if (LOOP.isMaster)
@@ -3894,31 +3831,61 @@ runInjection()
 
                 int masterInjectionStartTime = PIPE[0].etimer->elapsed()/1000;
 
-                /// start injection	upon master pipe phase
-    			onActionStartInjection();
-/*
-                if (LOOP.masterPhase == PHASE_OIL)
-                {
-    				onActionStartInjection();
-                    LOOP.oilPhaseInjectCounter = 0;
-                }
-                else
-                {
-    				onActionStopInjection();
-                    LOOP.oilPhaseInjectCounter++;
+				if (LOOP.isOilRun)
+				{
+                	/// check phase rollover
+                	if ((int)LOOP.masterPhase == PHASE_OIL)
+                	{
+						/// start injecting
+    					onActionStartInjection();
+                    	LOOP.phaseRolloverCounter = 0;
+                	}
+                	else
+                	{
+    					onActionStopInjection();
+                    	LOOP.phaseRolloverCounter++;
 
-                    if (LOOP.oilPhaseInjectCounter > MAX_PHASE_CHECKING)
-                    {
-                        if (LOOP.masterPhase == PHASE_WATER) informUser("Master Piple Is In Water Phase Now", QString("Watercut ").append(QString::number(LOOP.masterWatercut)).append(" %"));
-                        else informUser("Master Piple Is ERROR Phase",QString("Phase Value Is ").append(QString::number(LOOP.masterPhase)));
-                    }
-                }
-*/
+                    	if (LOOP.phaseRolloverCounter > MAX_PHASE_CHECKING)
+                    	{
+                        	if (LOOP.masterPhase == PHASE_WATER) informUser("Master Piple Is In Water Phase Now", QString("Watercut ").append(QString::number(LOOP.masterWatercut)).append(" %"));
+                        	else informUser("Master Piple Is In ERROR Phase",QString("Phase Value Is ").append(QString::number(LOOP.masterPhase)));
+                    	}
+				
+						onActionStop();
+						return;	
+                	}
+				}
+				else // LOOP.isWaterRun
+				{
+					/// check phase rollover
+                	if ((int)LOOP.masterPhase == PHASE_WATER)
+                	{
+						/// start injecting
+    					onActionStartInjection();
+                    	LOOP.phaseRolloverCounter = 0;
+                	}
+                	else
+                	{
+    					onActionStopInjection();
+                    	LOOP.phaseRolloverCounter++;
+
+                    	if (LOOP.phaseRolloverCounter > MAX_PHASE_CHECKING)
+                    	{
+                        	if (LOOP.masterPhase == PHASE_OIL) informUser("Master Piple Is In Oil Phase Now", QString("Watercut ").append(QString::number(LOOP.masterWatercut)).append(" %"));
+                        	else informUser("Master Piple Is In ERROR Phase",QString("Phase Value Is ").append(QString::number(LOOP.masterPhase)));
+
+							onActionStop();
+							return;
+                    	}
+                	}
+				}
+
+				/// comparing with master pipe
                 while (1)
                 {
 					/// breaking condition
-					if (LOOP.isOilRun && (LOOP.masterWatercut > LOOP.watercut)) break;
-					if (LOOP.isWaterRun && (LOOP.masterWatercut < LOOP.watercut)) break;
+					if (LOOP.isOilRun && (LOOP.masterWatercut >= LOOP.watercut)) break;
+					if (LOOP.isWaterRun && (LOOP.masterWatercut <= LOOP.watercut)) break;
 
                     int masterInjectionTime = PIPE[0].etimer->elapsed()/1000;
 
@@ -3939,6 +3906,7 @@ runInjection()
                         }
                     }
 
+					/// read master pipe again
                     readMasterPipe();
                 }
 
@@ -3983,6 +3951,7 @@ runInjection()
                     if (!isUserInputYes(QString("Injection Time ")+QString::number(injectionTime)+QString(" Is Greater Than Max Water Injection Time ")+QString::number(LOOP.maxInjectionWater), "Do You Want To Continue?"))
                     {
                         onActionStop();
+    					onActionStopInjection();
                         return;
                     }
                 }
@@ -4042,10 +4011,10 @@ runInjection()
             }
 
 			/// stop if razor
-			if (!LOOP.isEEA) 
+			if ((!LOOP.isEEA) || (LOOP.cut == MID))
             {
                 /// finish calibration if razor
-                informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),("                                    "),"Calibration has finished successfully.");
+                informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),BLANK,"Calibration has finished successfully.");
                 onActionStop();
                 return;
             }
@@ -4079,26 +4048,18 @@ runInjection()
 						for (int pipe=0; pipe<3; pipe++) if (PIPE[pipe].status == ENABLED) PIPE[pipe].file.setFileName(PIPE[pipe].mainDirPath+"\\"+ QString::number(SALINITY[LOOP.salinityIndex].toDouble()*100).append("_100").append(LOOP.filExt));
 					}
 				}
-				else 
+				else // oil run needs to stop here
 				{	/// entire calibration has finished after oilRun finished
 					onActionStop(); 
+                	informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),BLANK,"Calibration has finished successfully.");
 				}
 
                	return;
             }
-			else if ((LOOP.cut == MID) || (LOOP.cut == LOW)) /// stop if midcut
-            {
-                /// finish calibration
-                informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),("                                    "),"Calibration has finished successfully.");
-                onActionStop();
-                return;
-            }
 
-            ////////////////////////////////////////////////////
-            ////////////////////////////////////////////////////
+			//---------- LOWCUT starts here -------------//
+
             /// ADJUSTED.LCI
-            ////////////////////////////////////////////////////
-            ////////////////////////////////////////////////////
             if (abs(totalInjectionVolume - (LOOP.injectionWaterPumpRate/60)*totalInjectionTime) > 0)
             {
                 for (int pipe=0; pipe<3; pipe++)
@@ -4170,7 +4131,7 @@ runInjection()
             }
 
             /// prepare for ROLLOVER.LCR
-            informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),QString("                                    "),"Please Switch The Injection Pump.");
+            informUser(QString("LOOP ")+QString::number(LOOP.loopNumber),BLANK,"Please Switch The Injection Pump.");
             LOOP.watercut += LOOP.intervalBigPump;
             for (int pipe = 0; pipe < 3; pipe++)
             {
@@ -4495,14 +4456,15 @@ updateMasterPipeStatus(const double watercut, const double freq, const double te
 {
     if (!isModbusTransmissionFailed)
     {
+		if ((int)phase == PHASE_OIL) ui->lineEdit_31->setText(QString("OIL"));
+        else if ((int)phase == PHASE_WATER) ui->lineEdit_31->setText(QString("WATER"));
+        else if ((int)phase == PHASE_ERROR) ui->lineEdit_31->setText(QString("ERROR")); 
         ui->lineEdit_20->setText(QString("%1").arg(watercut,7,'f',2,' '));
         ui->lineEdit_22->setText(QString("%1").arg(salt,7,'f',2,' '));
         ui->lineEdit_21->setText(QString("%1").arg(adj,7,'f',2,' '));
         ui->lineEdit_29->setText(QString("%1").arg(temp,7,'f',2,' '));
         ui->lineEdit_30->setText(QString("%1").arg(freq,7,'f',3,' '));
-        if (phase == PHASE_OIL) ui->lineEdit_31->setText(QString("OIL"));
-        else if (phase == PHASE_WATER) ui->lineEdit_31->setText(QString("WATER"));
-        else if (phase == PHASE_ERROR) ui->lineEdit_31->setText(QString("ERROR"));
+        //ui->lineEdit_31->setText(QString("%1").arg(phase,7,'f',3,' '));
     }
 }
 
