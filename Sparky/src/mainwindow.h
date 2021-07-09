@@ -414,6 +414,7 @@ public:
 
     int setupModbusPort();
 
+	void initTempRun();
 	double read_request(int, int, int, int, uint8_t *, uint16_t *, bool);
 	void write_request(int, int, double, int, bool);
 	void createDataStream(const int pipe, QString & data_stream);

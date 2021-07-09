@@ -3505,6 +3505,55 @@ readMasterPipe()
 
 void
 MainWindow::
+initTempRun()
+{
+	bool ok;
+	/// popup questions
+   	if (!isUserInputYes(QString("LOOP ")+QString::number(LOOP.loopNumber),"Fill The Water Container To The Mark."))
+   	{
+       	onActionStop();
+       	return;
+   	}
+
+   	LOOP.operatorName = QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Operator's Name.")), QLineEdit::Normal," ", &ok);
+   	LOOP.oilRunStart->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Measured Initial Watercut.")), QLineEdit::Normal,"0.0", &ok));
+   	LOOP.watercut = LOOP.oilRunStart->text().toDouble();
+
+  	/// master pipe validation
+   	if (LOOP.isMaster)
+   	{
+      	if (LOOP.masterWatercut > LOOP.masterMax)
+       	{
+           	if (!isUserInputYes(QString("Master Pipe Raw watercut Value Is Greater Than ")+QString::number(LOOP.masterMax), "Do You Want To Continue?"))
+           	{
+               	onActionStop();
+               	return;
+           	}
+       	}
+
+       	if (LOOP.masterWatercut < LOOP.masterMin)
+       	{
+           	if (!isUserInputYes(QString("Master Pipe Raw watercut Value Is Less Than ")+QString::number(LOOP.masterMin), "Do You Want To Continue?"))
+           	{
+               	onActionStop();
+               	return;
+           	}
+       	}
+                   
+		if (abs(LOOP.masterWatercut - LOOP.oilRunStart->text().toDouble()) > LOOP.masterDelta)
+      	{
+          	if (!isUserInputYes(QString("The difference between master watercut and measured initial watercut is greater than ")+QString::number(LOOP.masterDelta), "Do You Want To Continue?"))
+          	{
+               	onActionStop();
+              	return;
+           	}
+     	}
+   	}
+}
+
+
+void
+MainWindow::
 runTempRun()
 {
     QString data_stream;
@@ -3517,60 +3566,16 @@ runTempRun()
 		/// variable initialization 
         if (LOOP.isInitTempRun)
         {
-            bool ok;
         	LOOP.isInitTempRun = false;
             updatePipeStability(ALL,NO_STABILITY_CHECK);
-
-            /// change y axis label and reset chart
             LOOP.axisY->setTitleText("Temperature (°C)");
 
 			/// set target temperature
         	if (LOOP.runMode == TEMPRUN_MIN) 
 			{
+				initTempRun(); /// get initial user inputs
 				LOOP.currentTemp = "AMB";
 				LOOP.targetTemp = QString::number(LOOP.minTemp);
-	
-				/// popup questions
-			   	if (!isUserInputYes(QString("LOOP ")+QString::number(LOOP.loopNumber),"Fill The Water Container To The Mark."))
-               	{
-                   	onActionStop();
-                   	return;
-               	}
-
-               	LOOP.operatorName = QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Operator's Name.")), QLineEdit::Normal," ", &ok);
-               	LOOP.oilRunStart->setText(QInputDialog::getText(this, QString("LOOP ")+QString::number(LOOP.loopNumber)+QString(" "),tr(qPrintable("Enter Measured Initial Watercut.")), QLineEdit::Normal,"0.0", &ok));
-               	LOOP.watercut = LOOP.oilRunStart->text().toDouble();
-
-               	/// master pipe validation
-               	if (LOOP.isMaster)
-               	{
-                   	if (LOOP.masterWatercut > LOOP.masterMax)
-                   	{
-                       	if (!isUserInputYes(QString("Master Pipe Raw watercut Value Is Greater Than ")+QString::number(LOOP.masterMax), "Do You Want To Continue?"))
-                       	{
-                           	onActionStop();
-                           	return;
-                       	}
-                   	}
-
-                   	if (LOOP.masterWatercut < LOOP.masterMin)
-                   	{
-                       	if (!isUserInputYes(QString("Master Pipe Raw watercut Value Is Less Than ")+QString::number(LOOP.masterMin), "Do You Want To Continue?"))
-                       	{
-                           	onActionStop();
-                           	return;
-                       	}
-                   	}
-                   
-					if (abs(LOOP.masterWatercut - LOOP.oilRunStart->text().toDouble()) > LOOP.masterDelta)
-                   	{
-                       	if (!isUserInputYes(QString("The difference between master watercut and measured initial watercut is greater than ")+QString::number(LOOP.masterDelta), "Do You Want To Continue?"))
-                       	{
-                           	onActionStop();
-                           	return;
-                       	}
-                   	}
-               	}
 			}
        		else if (LOOP.runMode == TEMPRUN_HIGH)
 			{
