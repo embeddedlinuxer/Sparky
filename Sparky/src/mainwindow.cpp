@@ -1662,7 +1662,7 @@ MainWindow::
 onActionSkip()
 {
 	if ((LOOP.runMode != TEMPRUN_MIN) && (LOOP.runMode != TEMPRUN_HIGH) && (LOOP.runMode != TEMPRUN_INJECT)) return;
-	if (isUserInputYes("Will Skip Current Temp Run Stage", "Do You Want To Skip?")) LOOP.isTempRunSkip = true;
+	if (isUserInputYes("Skip Current Stage", "Do You Want To Skip and Go To Next Stage?")) LOOP.isTempRunSkip = true;
 	if (LOOP.isPause == true)
 	{
 		ui->actionStart->setVisible(false);
@@ -1691,14 +1691,6 @@ onActionStart()
 {
 	ui->actionStart->setVisible(false);
 	ui->actionPause->setVisible(true);
-
-	LOOP.isTempRunSkip = false;
-
-	if (LOOP.isPause == true)
-	{	
-		LOOP.isPause = false;
-		return;
-	}
 
 	/// update configuration file with the latest select 
     writeJsonConfigFile();
@@ -1753,7 +1745,7 @@ MainWindow::
 onActionStopPressed()
 {
 	if (LOOP.runMode == STOP_CALIBRATION) return;
-	if (isUserInputYes("Will Cancel Calibration.", "Do You Want To Cancel?")) onActionStop();
+	if (isUserInputYes("Cancel Calibration.", "Do You Want To Cancel?")) onActionStop();
 }
 
 
@@ -3592,7 +3584,7 @@ runTempRun()
 			}
 			
 			/// ask op to set heat exchanger temperature
-            if (!isUserInputYes(QString("Set The Heat Exchanger Temperature"), LOOP.targetTemp.append("°C")))
+            if (!isUserInputYes(QString("Set The Heat Exchanger Temperature (°C)"), LOOP.targetTemp))
             {
                 onActionStop();
                 return;
@@ -3603,6 +3595,7 @@ runTempRun()
             {
                 if (PIPE[pipe].status == ENABLED)
                 {
+          			setFileNameForNextStage(pipe, LOOP.currentTemp+"_"+LOOP.targetTemp+LOOP.filExt);
                     if (!QFileInfo(PIPE[pipe].file).exists()) createTempRunFile(PIPE[pipe].slave->text().toInt(), LOOP.currentTemp, LOOP.targetTemp, "1", pipe);
                 }
             }
@@ -3628,22 +3621,24 @@ runTempRun()
             /// if not stable yet && read pipe and update temprun file
             if ((PIPE[pipe].status == ENABLED) && PIPE[pipe].checkBox->isChecked() && ((PIPE[pipe].tempStability != 5) || (PIPE[pipe].freqStability != 5)))
             {
-            	(abs(LOOP.minTemp - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
+            	(abs(LOOP.targetTemp.toDouble() - PIPE[pipe].temperature) < 2.0) ? readPipe(pipe, STABILITY_CHECK) : readPipe(pipe, NO_STABILITY_CHECK);
                 createDataStream(pipe,data_stream);
                 writeToCalFile(pipe, data_stream);
             }
             else /// now stable
             {
-                if (PIPE[pipe].status == ENABLED) /// do nothing if pipe == done
+                if (PIPE[pipe].status == ENABLED) /// "ENABLED" pipe is now stable 
                 {
-                    PIPE[pipe].status = DONE; /// set status == done 
-                   	setFileNameForNextStage(pipe, LOOP.currentTemp.append("_").append(LOOP.targetTemp).append(LOOP.filExt));
+                    PIPE[pipe].status = DONE; /// set status DONE 
+					PIPE[pipe].tempStability = 0;
+					PIPE[pipe].freqStability = 0;
 
 					/// all pipes are finished
                     if ((PIPE[0].status != ENABLED) && (PIPE[1].status != ENABLED) && (PIPE[2].status != ENABLED)) 
 					{
 						LOOP.isInitTempRun = true;
 						LOOP.isTempRunSkip = false;
+						for (int x=0; x<3; x++) if (PIPE[x].status == DONE) PIPE[x].status = ENABLED;
 
 						/// change mode
 						if (LOOP.runMode == TEMPRUN_MIN) LOOP.runMode = TEMPRUN_HIGH;

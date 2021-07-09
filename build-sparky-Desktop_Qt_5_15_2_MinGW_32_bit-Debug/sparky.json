@@ -14,7 +14,7 @@
     "LOOP.MaxInjectionWater": "5000",
     "LOOP.MaxRefTemp": "55",
     "LOOP.Method": "0",
-    "LOOP.MinRefTemp": "22",
+    "LOOP.MinRefTemp": "26",
     "LOOP.OilPumpRate": "326.17",
     "LOOP.PortIndex": "1",
     "LOOP.PresssureSensorSlope": "0",
